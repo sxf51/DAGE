@@ -5,6 +5,7 @@ endif()
 get_filename_component(old_binary_name "${OLD_BINARY}" NAME)
 get_filename_component(baseline_library_name "${BASELINE_LIBRARY}" NAME)
 get_filename_component(new_library_name "${NEW_LIBRARY}" NAME)
+get_filename_component(new_library_directory "${NEW_LIBRARY}" DIRECTORY)
 if(NOT baseline_library_name STREQUAL new_library_name)
   message(FATAL_ERROR
     "Baseline and current ABI libraries must have the same filename: "
@@ -38,6 +39,12 @@ elseif(UNIX)
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env
             "LD_LIBRARY_PATH=${stage_directory}"
+    "${stage_directory}/${old_binary_name}"
+    RESULT_VARIABLE run_result)
+elseif(WIN32)
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env
+            "PATH=${new_library_directory};$ENV{PATH}"
             "${stage_directory}/${old_binary_name}"
     RESULT_VARIABLE run_result)
 else()
