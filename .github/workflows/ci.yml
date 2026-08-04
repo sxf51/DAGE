@@ -19,7 +19,7 @@ jobs:
         os: [ubuntu-22.04, ubuntu-24.04-arm, macos-15-intel, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
@@ -42,7 +42,7 @@ jobs:
           ctest --test-dir build-consumer --output-on-failure
       - name: Build unsigned CI archive
         run: cpack --config build-ci/CPackConfig.cmake
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dage-${{ matrix.os }}-unsigned
           path: build-ci/packages/
@@ -50,7 +50,7 @@ jobs:
   sanitizers:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure ASan and UBSan
@@ -66,7 +66,7 @@ jobs:
   thread-sanitizer:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure ThreadSanitizer
@@ -84,7 +84,7 @@ jobs:
   fuzz-smoke:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure libFuzzer
@@ -101,7 +101,7 @@ jobs:
         run: mkdir -p fuzz-artifacts && build-fuzz/dage_workflow_fuzzer -runs=2000 -artifact_prefix=fuzz-artifacts/ fuzz/corpus/workflow
       - name: Upload fuzz failure artifact
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: workflow-fuzz-smoke-failure
           path: fuzz-artifacts/
@@ -113,8 +113,8 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v4
-      - uses: msys2/setup-msys2@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: UCRT64
           update: true
@@ -143,7 +143,7 @@ jobs:
           ctest --test-dir build-consumer --output-on-failure
       - name: Build unsigned CI archive
         run: cpack --config build-ci/CPackConfig.cmake
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dage-windows-mingw-x64-unsigned
           path: build-ci/packages/
@@ -151,7 +151,7 @@ jobs:
   windows-msvc:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure MSVC with vcpkg manifest
         shell: pwsh
         run: |
@@ -178,7 +178,7 @@ jobs:
           ctest --test-dir build-msvc-consumer -C Release --output-on-failure
       - name: Build unsigned MSVC CI archive
         run: cpack --config build-msvc/CPackConfig.cmake -C Release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dage-windows-msvc-x64-unsigned
           path: build-msvc/packages/
@@ -186,7 +186,7 @@ jobs:
   static-package:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure static distribution
@@ -207,26 +207,26 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "21"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: bindings/node/package-lock.json
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
-      - uses: dtolnay/rust-toolchain@1.75.0
+      - uses: dtolnay/rust-toolchain@6f7ec2e25b958742591cff7f1bee758884983879 # 1.75.0
         with:
           components: clippy,rustfmt
-      - uses: msys2/setup-msys2@v2
+      - uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: UCRT64
           update: true
