@@ -57,6 +57,9 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       targets with pkg-config fallback plus a vcpkg manifest enable a new MSVC `/W4 /WX` job.
       Installed shared-library consumer execution uses app-local deployment of the staged Windows
       DLL, validating the exact installed artifact without relying on global DLL search state.
+      MSVC keeps `/W4 /WX`; only C4251 is narrowly suppressed for private pImpl/STL ownership in
+      exported C++ conveniences because the frozen cross-toolchain contract is the C ABI. The C
+      ABI audit uses `fopen_s` on MSVC rather than disabling secure-CRT diagnostics.
       Completion requires the first clean GCC, Clang, AppleClang, MinGW, and MSVC CI matrix run.
 - [-] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and
       pkg-config packages now install shared/static Core, optional extension targets, headers, and

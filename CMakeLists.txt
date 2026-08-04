@@ -19,7 +19,9 @@ set(DAGE_SANITIZERS "address,undefined" CACHE STRING
 
 if(DAGE_WARNINGS_AS_ERRORS)
   if(MSVC)
-    add_compile_options(/W4 /WX)
+    # C++ API classes intentionally export pImpl handles. DAGE freezes the C ABI; its C++ ABI is
+    # compiler/runtime scoped, so C4251 is not actionable for these private ownership members.
+    add_compile_options(/W4 /WX /wd4251)
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
   endif()
