@@ -45,9 +45,11 @@ jobs:
           cmake --install build-ci --prefix "$PWD/stage"
           cmake -S tests/package/consumer -B build-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/stage"
           cmake --build build-consumer
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake -E copy "$PWD/stage/bin/libdage.dll" "$PWD/build-consumer/"
-          fi
+      - name: Deploy staged runtime beside Windows consumer
+        if: runner.os == 'Windows'
+        run: cmake -E copy "$PWD/stage/bin/libdage.dll" "$PWD/build-consumer/"
+      - name: Run installed CMake package consumer
+        run: |
           ctest --test-dir build-consumer --output-on-failure
       - name: Build unsigned CI archive
         run: cpack --config build-ci/CPackConfig.cmake
