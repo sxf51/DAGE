@@ -540,6 +540,8 @@ static void value_tests(){
 static void validation_tests(){
     dage::Engine e;
     CHECK(has_code(e.validate("{"),"INVALID_JSON"));
+    CHECK(has_code(e.validate("{\"format\":{},\"format_version\":\"0.2.0\",\"entry\":\"a\",\"nodes\":{\"a\":{\"type\":\"end\"}}}"),
+                   "INVALID_FIELD_TYPE"));
     CHECK(has_code(e.validate("{\"format\":\"dage-workflow\",\"format_version\":\"0.2.0\",\"nodes\":{\"a\":{\"type\":\"end\"}}}"),"MISSING_ENTRY"));
     CHECK(has_code(e.validate(wf("{\"a\":{\"type\":\"noop\",\"next\":\"missing\"}}")),"UNKNOWN_NODE_REFERENCE"));
     CHECK(has_code(e.validate(wf("{\"a\":{\"type\":\"noop\",\"next\":[{\"to\":\"b\",\"otherwise\":true},{\"to\":\"b\",\"otherwise\":true}]},\"b\":{\"type\":\"end\"}}")),"MULTIPLE_OTHERWISE"));

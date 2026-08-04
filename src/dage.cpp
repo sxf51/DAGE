@@ -768,6 +768,7 @@ std::vector<Diagnostic> Engine::validate(const std::string& text)const {
     try{root=parse_workflow_json(text,impl_->workflow_limits);}catch(const std::exception& e){
         const std::string message=e.what();const bool limited=message.find("WORKFLOW_")==0;
         add_diag(d,Severity::Error,limited?message.substr(0,message.find(':')):"INVALID_JSON","/",message);return d;}
+    try {
     if(!root.isObject()){add_diag(d,Severity::Error,"INVALID_ROOT","/","Root must be an object.");return d;}
     const std::set<std::string> top={"format","format_version","id","name","description","entry","input","output","limits","defaults","nodes"};
     std::vector<std::string> topnames=root.getMemberNames();for(std::size_t i=0;i<topnames.size();++i)
@@ -856,6 +857,9 @@ std::vector<Diagnostic> Engine::validate(const std::string& text)const {
             else if(nodes.isMember(to)&&active.count(to)==0)dfs(to,active);
         }}active.erase(id);
     };if(nodes.isMember(entry)){std::set<std::string>a;dfs(entry,a);}
+    }catch(const Json::LogicError& error){
+        add_diag(d,Severity::Error,"INVALID_FIELD_TYPE","/",error.what());
+    }
     return d;
 }
 
@@ -1961,21 +1965,29 @@ void Run::execute_async(const Value& input,const RunCompletion& completion){
     }
     try{impl_->scheduler->schedule_continuation(*drive);}
     catch(const std::exception& ex){
-        std::lock_guard<std::mutex> lock(impl_->continuation_mutex);
-        impl_->callback_delivered=true;impl_->run_completion=RunCompletion();
-        impl_->resume_drive=std::function<void()>();
+        {
+            std::lock_guard<std::mutex> lock(impl_->continuation_mutex);
+            impl_->callback_delivered=true;impl_->run_completion=RunCompletion();
+            impl_->resume_drive=std::function<void()>();
+        }
+        *drive=std::function<void()>();
         completion(ExecutionResult::fail("resource_limit","SCHEDULER_REJECTED",ex.what(),true));
     }
 }
 
 ExecutionResult Run::execute(const Value& input){
-    std::mutex mutex;std::condition_variable ready;bool done=false;
-    ExecutionResult result=ExecutionResult::fail("internal_error","NOT_COMPLETED","Run did not complete.");
-    execute_async(input,[&](const ExecutionResult& value){
-        {std::lock_guard<std::mutex> lock(mutex);result=value;done=true;}ready.notify_one();
+    struct WaitState {
+        std::mutex mutex;std::condition_variable ready;bool done=false;
+        ExecutionResult result=ExecutionResult::fail(
+            "internal_error","NOT_COMPLETED","Run did not complete.");
+    };
+    std::shared_ptr<WaitState> wait(new WaitState());
+    execute_async(input,[wait](const ExecutionResult& value){
+        {std::lock_guard<std::mutex> lock(wait->mutex);wait->result=value;wait->done=true;}
+        wait->ready.notify_one();
     });
-    std::unique_lock<std::mutex> lock(mutex);ready.wait(lock,[&](){return done;});
-    return result;
+    std::unique_lock<std::mutex> lock(wait->mutex);wait->ready.wait(lock,[&](){return wait->done;});
+    return wait->result;
 }
 
 ExecutionResult Run::resume(const Value& human_output){

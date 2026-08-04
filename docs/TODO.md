@@ -34,7 +34,10 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       libFuzzer covers parse/validate/compile/export under ASan/UBSan; Linux TSAN runs Core,
       property, and concurrency suites; a parallel async-completion soak runs briefly on PRs and
       at 80,000 Runs nightly. Completion requires accumulated clean scheduled-run evidence and
-      promotion of every discovered crash/race into a minimized permanent regression corpus.
+      promotion of every discovered crash/race into a minimized permanent regression corpus. The
+      first hosted run promoted a JsonCpp field-type termination into the permanent corpus and
+      replaced synchronous execute's stack-borrowed completion wait state with shared lifetime;
+      scheduler rejection also breaks the self-referential drive closure before returning.
       Hosted evidence collection resumes with the next published branch now that CI capacity is
       available again. Lease expiry conformance now waits on the observable reclaimed state with a
       bounded deadline instead of assuming a scheduler-sensitive millisecond sleep.
