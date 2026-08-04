@@ -68,7 +68,8 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       Both creation and post-download verification validate its schema, unique dependency names,
       exact enabled versions, consumers, exact release-version binding and signed digest instead of
       trusting an artifact role label. GitHub workflows use least-privilege read permissions and
-      pin current official Actions to immutable reviewed commit SHAs rather than movable tags.
+      pin current official Actions to immutable reviewed commit SHAs rather than movable tags;
+      feature branches run the PR matrix once instead of duplicating push and PR executions.
       Completion requires an
       independent review with findings disposition, freezing the proposed support window at the
       first 1.0 RC, and a controlled offline/HSM-key clean-environment release exercise.
