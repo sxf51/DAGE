@@ -1137,6 +1137,7 @@ public:
         std::size_t in_flight=0;
         std::size_t success_count=0;
         std::size_t failure_count=0;
+        bool launching_batch=false;
         bool batch_ready=false;
         bool terminal=false;
         ExecutionResult terminal_result=ExecutionResult::ok(Value::object());
@@ -1754,6 +1755,10 @@ ExecutionResult Run::execute_step(const Value& public_input) {
                 if(pending->next_index>=pending->branches.size())break;
 
                 const std::size_t end=std::min(pending->branches.size(),pending->next_index+pending->max_parallel);
+                {
+                    std::lock_guard<std::mutex> lock(pending->mutex);
+                    pending->launching_batch=true;
+                }
                 while(pending->next_index<end){
                     const std::string branch=pending->branches[pending->next_index++];
                     const std::string child_id=state["_parallel_children"][current][branch].asString();
@@ -1793,7 +1798,8 @@ ExecutionResult Run::execute_step(const Value& public_input) {
                             {
                                 std::lock_guard<std::mutex> lock(pending->mutex);
                                 pending->batch_results.push_back(std::make_pair(branch,branch_result));
-                                if(--pending->in_flight==0)pending->batch_ready=true;
+                                if(--pending->in_flight==0&&!pending->launching_batch)
+                                    pending->batch_ready=true;
                                 batch_ready=pending->batch_ready;
                             }
                             {
@@ -1802,6 +1808,11 @@ ExecutionResult Run::execute_step(const Value& public_input) {
                             }
                             if(resume)try{parent->scheduler->schedule_continuation(resume);}catch(...){}
                         });
+                }
+                {
+                    std::lock_guard<std::mutex> lock(pending->mutex);
+                    pending->launching_batch=false;
+                    if(pending->in_flight==0)pending->batch_ready=true;
                 }
             }
             const bool enough=pending->mode=="any"?pending->success_count>0:

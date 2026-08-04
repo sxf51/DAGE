@@ -41,6 +41,9 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       Parallel conformance now uses an observable two-branch rendezvous instead of a hosted-runner
       wall-clock threshold, and the success-path soak provisions its bounded queue independently
       of machine scheduling noise; saturation remains covered by deterministic rejection tests.
+      ARM macOS then exposed and fixed an immediate-completion race: a parallel batch is not
+      publishable until every child in that batch has been registered, preventing early parent
+      cleanup from abandoning later children. Soak failures retain their first structured error.
       Hosted evidence collection resumes with the next published branch now that CI capacity is
       available again. Lease expiry conformance now waits on the observable reclaimed state with a
       bounded deadline instead of assuming a scheduler-sensitive millisecond sleep.

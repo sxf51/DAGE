@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -70,6 +71,8 @@ int main(int argc,char** argv) {
         });
         std::unique_ptr<dage::Workflow> workflow=engine.load(workflow_json);
         std::atomic<std::uint64_t> failures{0};
+        std::mutex failure_mutex;
+        std::string first_failure;
         std::vector<std::thread> threads;
         threads.reserve(static_cast<std::size_t>(thread_count));
         for(std::uint64_t thread=0;thread<thread_count;++thread) {
@@ -81,10 +84,20 @@ int main(int argc,char** argv) {
                     try {
                         const dage::ExecutionResult result=
                             engine.create_run(*workflow)->execute(input);
-                        if(!result.success||!result.output.get("ok").as_bool())
+                        if(!result.success||!result.output.get("ok").as_bool()) {
                             failures.fetch_add(1,std::memory_order_relaxed);
+                            std::lock_guard<std::mutex> lock(failure_mutex);
+                            if(first_failure.empty())first_failure=result.success?"invalid success output":
+                                result.error.category+":"+result.error.code+":"+result.error.message;
+                        }
+                    } catch(const std::exception& error) {
+                        failures.fetch_add(1,std::memory_order_relaxed);
+                        std::lock_guard<std::mutex> lock(failure_mutex);
+                        if(first_failure.empty())first_failure=std::string("exception: ")+error.what();
                     } catch(...) {
                         failures.fetch_add(1,std::memory_order_relaxed);
+                        std::lock_guard<std::mutex> lock(failure_mutex);
+                        if(first_failure.empty())first_failure="unknown exception";
                     }
                 }
             });
@@ -93,7 +106,8 @@ int main(int argc,char** argv) {
         const std::uint64_t runs=thread_count*iterations;
         if(failures.load()!=0||executor_calls.load()!=runs*4) {
             std::cerr << "soak mismatch: failures=" << failures.load()
-                      << " calls=" << executor_calls.load() << " expected=" << runs*4 << '\n';
+                      << " calls=" << executor_calls.load() << " expected=" << runs*4
+                      << " first_failure=" << first_failure << '\n';
             return 1;
         }
         std::cout << "concurrency soak passed: runs=" << runs
