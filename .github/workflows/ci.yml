@@ -233,6 +233,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@6f7ec2e25b958742591cff7f1bee758884983879 # 1.75.0
         with:
           components: clippy,rustfmt
+          targets: x86_64-pc-windows-gnu
       - uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: UCRT64
@@ -254,9 +255,10 @@ jobs:
       - name: Deploy discovered MinGW runtime dependencies
         shell: msys2 {0}
         run: |
-          mapfile -t runtime_dependencies < <(ldd build-bindings/libdage.dll | awk '$2 == "=>" && $3 ~ /\/ucrt64\/bin\// { print $3 }')
+          mapfile -t runtime_dependencies < <(ldd build-bindings/libdage.dll | awk '$2 == "=>" && $3 ~ /\/ucrt64\/bin\// { print $3 }' | sort -u)
           test "${#runtime_dependencies[@]}" -gt 0
           cp "${runtime_dependencies[@]}" build-bindings/
+          echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=$(cygpath -w /ucrt64/bin/gcc.exe)" >> "$GITHUB_ENV"
       - name: Build Node-API adapter
         working-directory: bindings/node
         run: npm ci && npm run build:native
@@ -281,6 +283,7 @@ jobs:
           dotnet run --project bindings/csharp/Dage.csproj -c Release -- tests/conformance/bindings
       - name: Run Rust conformance
         env:
+          CARGO_BUILD_TARGET: x86_64-pc-windows-gnu
           DAGE_LIB_DIR: ${{ github.workspace }}/build-bindings
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
