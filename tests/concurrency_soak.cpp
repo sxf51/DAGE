@@ -52,7 +52,10 @@ int main(int argc,char** argv) {
 
         dage::ThreadPoolOptions options;
         options.worker_count=static_cast<std::size_t>(std::max<std::uint64_t>(2,thread_count));
-        options.queue_capacity=options.worker_count*64;
+        // This soak verifies successful concurrent Run/completion lifetimes. Backpressure and
+        // rejection semantics have dedicated deterministic tests, so provision this queue for
+        // the largest permitted invocation rather than making host load decide the outcome.
+        options.queue_capacity=static_cast<std::size_t>(thread_count*iterations*8);
         auto scheduler=std::make_shared<dage::ThreadPoolScheduler>(options);
         dage::Engine engine(scheduler);
         std::atomic<std::uint64_t> executor_calls{0};

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <iostream>
 #include <stdexcept>
 #include <thread>
@@ -1203,18 +1204,23 @@ static void loop_and_export_tests(){
 }
 static void parallel_test(){
     dage::Engine e;auto replay_trace=std::make_shared<dage::MemoryTraceSink>();e.set_trace_sink(replay_trace);
+    std::mutex parallel_mutex;std::condition_variable parallel_ready;int active_branches=0;
     std::atomic<int> branch_calls(0);e.register_executor("branch",[&](const dage::ExecutionContext&ctx,const dage::Value&){
         ++branch_calls;
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        {
+            std::unique_lock<std::mutex> lock(parallel_mutex);++active_branches;
+            parallel_ready.notify_all();
+            if(!parallel_ready.wait_for(lock,std::chrono::seconds(5),[&]{return active_branches==2;}))
+                return dage::ExecutionResult::fail(
+                    "internal_error","PARALLEL_NOT_CONCURRENT","parallel branches did not overlap");
+        }
         dage::Value out=dage::Value::object();out.set("branch",dage::Value(ctx.node_id));return dage::ExecutionResult::ok(out);});
     e.register_executor("echo",[](const dage::ExecutionContext&,const dage::Value&i){return dage::ExecutionResult::ok(i);});
     std::string text="{\"format\":\"dage-workflow\",\"format_version\":\"0.2.0\",\"entry\":\"a\",\"limits\":{\"max_parallel\":2},\"nodes\":{\"a\":{\"type\":\"parallel\",\"branches\":[\"b\",\"c\"],\"join\":\"j\"},\"b\":{\"type\":\"tool\",\"executor\":\"branch\",\"effects\":{\"kind\":\"pure\",\"replay\":\"safe\"},\"next\":\"j\"},\"c\":{\"type\":\"tool\",\"executor\":\"branch\",\"effects\":{\"kind\":\"pure\",\"replay\":\"safe\"},\"next\":\"j\"},\"j\":{\"type\":\"join\",\"executor\":\"echo\",\"input\":{\"b\":\"${nodes.b.output.branch}\",\"c\":\"${nodes.c.output.branch}\"},\"next\":\"z\"},\"z\":{\"type\":\"end\",\"input\":{\"b\":\"${nodes.j.output.b}\",\"c\":\"${nodes.j.output.c}\"}}}}";
     std::unique_ptr<dage::Workflow>w=e.load(text);dage::RunOptions full;full.trace_capture=dage::TraceCapture::Full;
-    const std::chrono::steady_clock::time_point start=std::chrono::steady_clock::now();
     dage::ExecutionResult result=e.create_run(*w,full)->execute(dage::Value::object());
-    const long long elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start).count();
     CHECK(result.success);CHECK(result.output.get("b").as_string()=="b");CHECK(result.output.get("c").as_string()=="c");
-    CHECK(elapsed<75&&branch_calls==2);
+    CHECK(branch_calls==2);
     auto plan=dage::prepare_trace_replay(replay_trace->events(),w->ir().digest(),w->bundle_digest());CHECK(plan);
     dage::ExecutionResult replayed=e.create_replay_run(*w,plan.value())->execute(plan.value().workflow_input);
     CHECK(replayed.success&&replayed.output.to_json()==result.output.to_json()&&branch_calls==2);

@@ -28,7 +28,12 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja pkg-config jsoncpp openssl@3 zlib
       - name: Configure
-        run: cmake -S . -B build-ci -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_BENCHMARKS=ON -DDAGE_BUILD_BINDINGS=OFF -DDAGE_WARNINGS_AS_ERRORS=ON
+        run: |
+          openssl_args=()
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            openssl_args+=("-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)")
+          fi
+          cmake -S . -B build-ci -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_BENCHMARKS=ON -DDAGE_BUILD_BINDINGS=OFF -DDAGE_WARNINGS_AS_ERRORS=ON "${openssl_args[@]}"
       - name: Build
         run: cmake --build build-ci
       - name: Test frozen C ABI compatibility

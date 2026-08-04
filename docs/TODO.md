@@ -38,6 +38,9 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       first hosted run promoted a JsonCpp field-type termination into the permanent corpus and
       replaced synchronous execute's stack-borrowed completion wait state with shared lifetime;
       scheduler rejection also breaks the self-referential drive closure before returning.
+      Parallel conformance now uses an observable two-branch rendezvous instead of a hosted-runner
+      wall-clock threshold, and the success-path soak provisions its bounded queue independently
+      of machine scheduling noise; saturation remains covered by deterministic rejection tests.
       Hosted evidence collection resumes with the next published branch now that CI capacity is
       available again. Lease expiry conformance now waits on the observable reclaimed state with a
       bounded deadline instead of assuming a scheduler-sensitive millisecond sleep.

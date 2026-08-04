@@ -285,7 +285,8 @@ endif()
 
 if(DAGE_BUILD_TESTS)
   find_package(Python3 COMPONENTS Interpreter QUIET)
-  find_program(DAGE_OPENSSL_CLI NAMES openssl)
+  find_program(DAGE_OPENSSL_CLI NAMES openssl
+    HINTS "${OPENSSL_ROOT_DIR}/bin")
   if(Python3_Interpreter_FOUND AND DAGE_OPENSSL_CLI)
     add_test(NAME dage_release_manifest_test
       COMMAND ${Python3_EXECUTABLE}
