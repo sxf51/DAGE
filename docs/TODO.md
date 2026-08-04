@@ -96,6 +96,7 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       .NET 10, Rust 1.75 and Node.js 24 candidate minimums are enforced in package/build metadata
       and CI. Windows binding conformance derives the generated DLL's UCRT64 dependency closure
       with `ldd` and deploys it app-local instead of assuming a global MSYS2 installation path.
+      The dependency-free Rust crate keeps a v3 lockfile readable by its declared Rust 1.75 floor.
       Completion requires the 1.0 RC freeze review and signed historical binaries in CI.
 
 ## Completed
