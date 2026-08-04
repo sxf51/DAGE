@@ -245,15 +245,18 @@ jobs:
             mingw-w64-ucrt-x86_64-openssl
             mingw-w64-ucrt-x86_64-zlib
             mingw-w64-ucrt-x86_64-pkgconf
-      - name: Export discovered UCRT64 runtime path
-        shell: msys2 {0}
-        run: echo "$(cygpath -w /ucrt64/bin)" >> "$GITHUB_PATH"
       - name: Configure shared runtime and JNI adapter
         shell: msys2 {0}
         run: cmake -S . -B build-bindings -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_BINDINGS=ON -DDAGE_WARNINGS_AS_ERRORS=ON
       - name: Build shared runtime and JNI adapter
         shell: msys2 {0}
         run: cmake --build build-bindings
+      - name: Deploy discovered MinGW runtime dependencies
+        shell: msys2 {0}
+        run: |
+          mapfile -t runtime_dependencies < <(ldd build-bindings/libdage.dll | awk '$2 == "=>" && $3 ~ /\/ucrt64\/bin\// { print $3 }')
+          test "${#runtime_dependencies[@]}" -gt 0
+          cp "${runtime_dependencies[@]}" build-bindings/
       - name: Build Node-API adapter
         working-directory: bindings/node
         run: npm ci && npm run build:native
