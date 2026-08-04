@@ -45,7 +45,7 @@ jobs:
           cmake --install build-ci --prefix "$PWD/stage"
           cmake -S tests/package/consumer -B build-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/stage"
           cmake --build build-consumer
-          ctest --test-dir build-consumer --output-on-failure
+          PATH="$PWD/stage/bin:$PATH" ctest --test-dir build-consumer --output-on-failure
       - name: Build unsigned CI archive
         run: cpack --config build-ci/CPackConfig.cmake
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

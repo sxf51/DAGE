@@ -55,6 +55,8 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       DAGE code while narrowly suppressing third-party node-addon-api's constant-condition warning.
       Every CI configuration enables the gate. Standard CMake dependency
       targets with pkg-config fallback plus a vcpkg manifest enable a new MSVC `/W4 /WX` job.
+      Installed shared-library consumer execution now explicitly includes the staged runtime
+      directory in `PATH`, validating the Windows DLL artifact without relying on runner state.
       Completion requires the first clean GCC, Clang, AppleClang, MinGW, and MSVC CI matrix run.
 - [-] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and
       pkg-config packages now install shared/static Core, optional extension targets, headers, and
