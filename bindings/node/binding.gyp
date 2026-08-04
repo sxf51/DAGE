@@ -12,7 +12,8 @@
           "VCCLCompilerTool": {
             "ExceptionHandling": 1,
             "WarningLevel": 4,
-            "WarnAsError": "true"
+            "WarnAsError": "true",
+            "DisableSpecificWarnings": ["4127"]
           }
         }
       }],

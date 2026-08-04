@@ -533,8 +533,8 @@ Value& Value::operator=(const Value& v) { if (this != &v) impl_.reset(new Impl(v
 Value::Value(Value&& v) noexcept : impl_(std::move(v.impl_)) { if (!impl_) impl_.reset(new Impl()); }
 Value& Value::operator=(Value&& v) noexcept { if(this!=&v){impl_=std::move(v.impl_);if(!impl_)impl_.reset(new Impl());}return *this; }
 Value Value::parse(const std::string& json) { Impl i(parse_json(json)); return Value(i); }
-Value Value::object() { Impl i(Json::Value(Json::objectValue)); return Value(i); }
-Value Value::array() { Impl i(Json::Value(Json::arrayValue)); return Value(i); }
+Value Value::object() { Impl i{Json::Value(Json::objectValue)}; return Value(i); }
+Value Value::array() { Impl i{Json::Value(Json::arrayValue)}; return Value(i); }
 Value::Type Value::type() const {
     if(impl_->value.isNull())return Type::Null;
     if(impl_->value.isBool())return Type::Boolean;

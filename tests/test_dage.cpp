@@ -11,6 +11,7 @@
 #include <zlib.h>
 #include <fstream>
 #endif
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <iostream>
@@ -1025,7 +1026,9 @@ static void trace_pipeline_and_lease_tests(){
     next_lease.value().reset();
     dage::ResourceRequest expiring=multi_request;expiring.lease_ttl_ms=1;
     auto expired=multi.acquire(expiring,nullptr);CHECK(expired);
-    std::this_thread::sleep_for(std::chrono::milliseconds(3));
+    const auto expiry_wait_deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(250);
+    while(multi.available().at("gpu")!=1&&std::chrono::steady_clock::now()<expiry_wait_deadline)
+        std::this_thread::yield();
     CHECK(multi.available().at("gpu")==1&&!expired.value()->renew(10));
 
     dage::FairResourceLeaseProvider ordered({{"slots",1}});

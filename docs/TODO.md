@@ -36,11 +36,15 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       at 80,000 Runs nightly. Completion requires accumulated clean scheduled-run evidence and
       promotion of every discovered crash/race into a minimized permanent regression corpus.
       Hosted evidence collection resumes with the next published branch now that CI capacity is
-      available again.
+      available again. Lease expiry conformance now waits on the observable reclaimed state with a
+      bounded deadline instead of assuming a scheduler-sensitive millisecond sleep.
 - [-] Warning-clean supported toolchains. All DAGE-owned Core, tools, examples, benchmarks, C/C++
       ABI fixtures, and tests now build clean under GCC/MinGW with
       `-Wall -Wextra -Wpedantic -Werror`; misleading control flow, initialization order, and dead
-      functions were removed. Every CI configuration enables the gate. Standard CMake dependency
+      functions were removed. GCC/Clang portability no longer depends on permissive indentation,
+      vexing-parse interpretation, or transitive standard-library includes; Node keeps `/WX` for
+      DAGE code while narrowly suppressing third-party node-addon-api's constant-condition warning.
+      Every CI configuration enables the gate. Standard CMake dependency
       targets with pkg-config fallback plus a vcpkg manifest enable a new MSVC `/W4 /WX` job.
       Completion requires the first clean GCC, Clang, AppleClang, MinGW, and MSVC CI matrix run.
 - [-] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and

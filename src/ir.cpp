@@ -54,10 +54,14 @@ std::vector<Json::Value> edge_values(const Json::Value& node,const char* field) 
     std::vector<Json::Value> out;if(!node.isMember(field))return out;const Json::Value& value=node[field];
     if(value.isString()){Json::Value edge(Json::objectValue);edge["to"]=value;out.push_back(edge);}
     else if(value.isObject())out.push_back(value);
-    else if(value.isArray())for(Json::ArrayIndex i=0;i<value.size();++i){
-        if(value[i].isString()){Json::Value edge(Json::objectValue);edge["to"]=value[i];out.push_back(edge);}
-        else out.push_back(value[i]);
-    }return out;
+    else if(value.isArray()){
+        for(Json::ArrayIndex i=0;i<value.size();++i){
+            if(value[i].isString()){
+                Json::Value edge(Json::objectValue);edge["to"]=value[i];out.push_back(edge);
+            }else out.push_back(value[i]);
+        }
+    }
+    return out;
 }
 }
 
