@@ -77,7 +77,9 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       manifest that dynamically verifies all 52 current C ABI exports on every shared-library
       platform. A C99 layout gate checks the exact 64-bit little-endian public struct sizes/member
       offsets and enum widths under each Tier-1 compiler; the native platform C calling convention
-      and exclusion of 32-bit/big-endian are explicit. A candidate native/language compatibility
+      and exclusion of 32-bit/big-endian are explicit. The frozen stub carries the same VERSION and
+      SOVERSION contract as the runtime, so old-binary replacement exercises the actual ELF SONAME
+      and Mach-O install-name layout rather than mismatched symlink basenames. A candidate native/language compatibility
       matrix distinguishes tested toolchains from future support promises. Python 3.12, Java 21,
       .NET 10, Rust 1.75 and Node.js 24 candidate minimums are enforced in package/build metadata
       and CI. Completion requires the 1.0 RC freeze review and signed historical binaries in CI.
