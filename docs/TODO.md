@@ -44,30 +44,18 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       ARM macOS then exposed and fixed an immediate-completion race: a parallel batch is not
       publishable until every child in that batch has been registered, preventing early parent
       cleanup from abandoning later children. Soak failures retain their first structured error.
-      Hosted evidence collection resumes with the next published branch now that CI capacity is
-      available again. Lease expiry conformance now waits on the observable reclaimed state with a
-      bounded deadline instead of assuming a scheduler-sensitive millisecond sleep.
-- [-] Warning-clean supported toolchains. All DAGE-owned Core, tools, examples, benchmarks, C/C++
-      ABI fixtures, and tests now build clean under GCC/MinGW with
-      `-Wall -Wextra -Wpedantic -Werror`; misleading control flow, initialization order, and dead
-      functions were removed. GCC/Clang portability no longer depends on permissive indentation,
-      vexing-parse interpretation, or transitive standard-library includes; Node keeps `/WX` for
-      DAGE code while narrowly suppressing third-party node-addon-api's constant-condition warning.
-      Every CI configuration enables the gate. Standard CMake dependency
-      targets with pkg-config fallback plus a vcpkg manifest enable a new MSVC `/W4 /WX` job.
-      Installed shared-library consumer execution uses app-local deployment of the staged Windows
-      DLL, validating the exact installed artifact without relying on global DLL search state.
-      MSVC keeps `/W4 /WX`; only C4251 is narrowly suppressed for private pImpl/STL ownership in
-      exported C++ conveniences because the frozen cross-toolchain contract is the C ABI. The C
-      ABI audit uses `fopen_s` on MSVC rather than disabling secure-CRT diagnostics.
-      Completion requires the first clean GCC, Clang, AppleClang, MinGW, and MSVC CI matrix run.
+      A complete hosted PR matrix is now clean across ASan/UBSan, TSAN, fuzz smoke and concurrency
+      soak. Completion still requires accumulated clean scheduled-run evidence. Lease expiry
+      conformance waits on observable reclaimed state with a bounded deadline instead of assuming
+      a scheduler-sensitive millisecond sleep.
 - [-] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and
       pkg-config packages now install shared/static Core, optional extension targets, headers, and
       CLI; clean external consumers execute a real Workflow. CI covers shared Linux and macOS
       x64/arm64 plus MinGW/MSVC x64, a separate static consumer gate, and architecture-labelled
       unsigned CPack archives. Local strict MinGW shared/static installs and the shared archive
-      pass. Completion requires the first clean hosted matrix and an exercised signed-release
-      procedure; unsigned CI archives are explicitly not production artifacts.
+      pass. The first complete hosted x64/arm64 matrix and installed consumer suite are clean.
+      Completion still requires an exercised signed-release procedure; unsigned CI archives are
+      explicitly not production artifacts.
 - [-] Threat model, security review, operational guide, LTS policy, and release process. Trust
       boundaries, principal threats, residual host/SPI risks, production readiness and failure
       response, upgrade/rollback, capacity signals, proposed 1.x support windows, emergency
@@ -109,6 +97,12 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
 
 ## Completed
 
+- [x] Warning-clean supported toolchains. DAGE-owned Core, tools, examples, benchmarks, C/C++ ABI
+      fixtures, tests and binding adapters pass the first complete hosted GCC, Clang, AppleClang,
+      MinGW and MSVC matrix with warnings as errors. Standard CMake dependency targets and vcpkg
+      support native toolchains. The reviewed suppressions are limited to private pImpl/STL C4251
+      diagnostics and third-party node-addon-api C4127; secure-CRT diagnostics remain fixed in
+      source. Installed Windows consumers use app-local runtime deployment.
 - [x] Workflow admission enforces host-configurable source-byte, JSON-depth, node, edge,
       expression, UTF-8 literal and deterministic compiled-IR budgets. Direct, registered,
       Bundle-loaded and Patch-produced Workflows converge on the same bounded load path with
