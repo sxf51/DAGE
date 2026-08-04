@@ -5,11 +5,18 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::task::{Context, Poll, Waker};
+use std::task::{Context, Poll, Wake, Waker};
 use std::time::{Duration, Instant};
 
+struct NoopWake;
+
+impl Wake for NoopWake {
+    fn wake(self: Arc<Self>) {}
+}
+
 fn wait(mut future: RunFuture) -> dage::Result<String> {
-    let mut context = Context::from_waker(Waker::noop());
+    let waker = Waker::from(Arc::new(NoopWake));
+    let mut context = Context::from_waker(&waker);
     let deadline = Instant::now() + Duration::from_secs(5);
     loop {
         if let Poll::Ready(value) = Pin::new(&mut future).poll(&mut context) {
