@@ -9,6 +9,7 @@ concurrency:
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
@@ -19,7 +20,7 @@ jobs:
         os: [ubuntu-22.04, ubuntu-24.04-arm, macos-15-intel, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
@@ -27,7 +28,12 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja pkg-config jsoncpp openssl@3 zlib
       - name: Configure
-        run: cmake -S . -B build-ci -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_BENCHMARKS=ON -DDAGE_BUILD_BINDINGS=OFF -DDAGE_WARNINGS_AS_ERRORS=ON
+        run: |
+          openssl_args=()
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            openssl_args+=("-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)")
+          fi
+          cmake -S . -B build-ci -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_BENCHMARKS=ON -DDAGE_BUILD_BINDINGS=OFF -DDAGE_WARNINGS_AS_ERRORS=ON "${openssl_args[@]}"
       - name: Build
         run: cmake --build build-ci
       - name: Test frozen C ABI compatibility
@@ -42,7 +48,7 @@ jobs:
           ctest --test-dir build-consumer --output-on-failure
       - name: Build unsigned CI archive
         run: cpack --config build-ci/CPackConfig.cmake
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dage-${{ matrix.os }}-unsigned
           path: build-ci/packages/
@@ -50,7 +56,7 @@ jobs:
   sanitizers:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure ASan and UBSan
@@ -66,7 +72,7 @@ jobs:
   thread-sanitizer:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure ThreadSanitizer
@@ -84,7 +90,7 @@ jobs:
   fuzz-smoke:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure libFuzzer
@@ -101,7 +107,7 @@ jobs:
         run: mkdir -p fuzz-artifacts && build-fuzz/dage_workflow_fuzzer -runs=2000 -artifact_prefix=fuzz-artifacts/ fuzz/corpus/workflow
       - name: Upload fuzz failure artifact
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: workflow-fuzz-smoke-failure
           path: fuzz-artifacts/
@@ -113,8 +119,8 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v4
-      - uses: msys2/setup-msys2@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: UCRT64
           update: true
@@ -140,10 +146,11 @@ jobs:
           cmake --install build-ci --prefix "$PWD/stage"
           cmake -S tests/package/consumer -B build-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/stage"
           cmake --build build-consumer
+          cmake -E copy "$PWD/stage/bin/libdage.dll" "$PWD/build-consumer/"
           ctest --test-dir build-consumer --output-on-failure
       - name: Build unsigned CI archive
         run: cpack --config build-ci/CPackConfig.cmake
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dage-windows-mingw-x64-unsigned
           path: build-ci/packages/
@@ -151,7 +158,7 @@ jobs:
   windows-msvc:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure MSVC with vcpkg manifest
         shell: pwsh
         run: |
@@ -178,7 +185,7 @@ jobs:
           ctest --test-dir build-msvc-consumer -C Release --output-on-failure
       - name: Build unsigned MSVC CI archive
         run: cpack --config build-msvc/CPackConfig.cmake -C Release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dage-windows-msvc-x64-unsigned
           path: build-msvc/packages/
@@ -186,7 +193,7 @@ jobs:
   static-package:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure static distribution
@@ -207,26 +214,27 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "21"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: bindings/node/package-lock.json
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
-      - uses: dtolnay/rust-toolchain@1.75.0
+      - uses: dtolnay/rust-toolchain@6f7ec2e25b958742591cff7f1bee758884983879 # 1.75.0
         with:
           components: clippy,rustfmt
-      - uses: msys2/setup-msys2@v2
+          targets: x86_64-pc-windows-gnu
+      - uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
         with:
           msystem: UCRT64
           update: true
@@ -244,6 +252,13 @@ jobs:
       - name: Build shared runtime and JNI adapter
         shell: msys2 {0}
         run: cmake --build build-bindings
+      - name: Deploy discovered MinGW runtime dependencies
+        shell: msys2 {0}
+        run: |
+          mapfile -t runtime_dependencies < <(ldd build-bindings/libdage.dll | awk '$2 == "=>" && $3 ~ /\/ucrt64\/bin\// { print $3 }' | sort -u)
+          test "${#runtime_dependencies[@]}" -gt 0
+          cp "${runtime_dependencies[@]}" build-bindings/
+          echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=$(cygpath -w /ucrt64/bin/gcc.exe)" >> "$GITHUB_ENV"
       - name: Build Node-API adapter
         working-directory: bindings/node
         run: npm ci && npm run build:native
@@ -252,26 +267,27 @@ jobs:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           python bindings/python/conformance.py
       - name: Run Java conformance
         run: |
           javac --release 21 -Xlint:all -Werror -d bindings/java/out bindings/java/io/dage/DageException.java bindings/java/io/dage/AsyncExecutor.java bindings/java/io/dage/AsyncExecutionContext.java bindings/java/io/dage/AsyncExecutorBridge.java bindings/java/io/dage/Engine.java bindings/java/io/dage/Workflow.java bindings/java/io/dage/Run.java bindings/java/io/dage/Smoke.java
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           java "-Djava.library.path=build-bindings" -cp bindings/java/out io.dage.Smoke tests/conformance/bindings
       - name: Run C# conformance
         env:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           dotnet run --project bindings/csharp/Dage.csproj -c Release -- tests/conformance/bindings
       - name: Run Rust conformance
         env:
+          CARGO_BUILD_TARGET: x86_64-pc-windows-gnu
           DAGE_LIB_DIR: ${{ github.workspace }}/build-bindings
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           cargo fmt --manifest-path bindings/rust/Cargo.toml -- --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo clippy --manifest-path bindings/rust/Cargo.toml --all-targets -- -D warnings
@@ -282,5 +298,5 @@ jobs:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           node bindings/node/native-smoke.js

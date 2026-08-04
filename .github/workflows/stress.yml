@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
       - name: Configure
@@ -28,7 +28,7 @@ jobs:
       - name: Build
         run: cmake --build build-stress --target dage_workflow_fuzzer dage_concurrency_soak
       - name: Restore evolving fuzz corpus
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .fuzz-corpus/workflow
           key: workflow-fuzz-${{ github.run_id }}
@@ -49,7 +49,7 @@ jobs:
         run: build-stress/dage_concurrency_soak --threads 8 --iterations 10000
       - name: Upload stress failure artifact
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nightly-stress-failure
           path: fuzz-artifacts/

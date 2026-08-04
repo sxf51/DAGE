@@ -19,7 +19,9 @@ set(DAGE_SANITIZERS "address,undefined" CACHE STRING
 
 if(DAGE_WARNINGS_AS_ERRORS)
   if(MSVC)
-    add_compile_options(/W4 /WX)
+    # C++ API classes intentionally export pImpl handles. DAGE freezes the C ABI; its C++ ABI is
+    # compiler/runtime scoped, so C4251 is not actionable for these private ownership members.
+    add_compile_options(/W4 /WX /wd4251)
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
   endif()
@@ -285,7 +287,8 @@ endif()
 
 if(DAGE_BUILD_TESTS)
   find_package(Python3 COMPONENTS Interpreter QUIET)
-  find_program(DAGE_OPENSSL_CLI NAMES openssl)
+  find_program(DAGE_OPENSSL_CLI NAMES openssl
+    HINTS "${OPENSSL_ROOT_DIR}/bin")
   if(Python3_Interpreter_FOUND AND DAGE_OPENSSL_CLI)
     add_test(NAME dage_release_manifest_test
       COMMAND ${Python3_EXECUTABLE}
@@ -429,6 +432,8 @@ if(DAGE_BUILD_TESTS)
       C_STANDARD_REQUIRED YES
       C_EXTENSIONS NO
       OUTPUT_NAME dage
+      VERSION ${PROJECT_VERSION}
+      SOVERSION 0
       RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/abi/v1/stub"
       LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/abi/v1/stub"
       ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/abi/v1/stub")

@@ -117,8 +117,12 @@ void atomic_write(const std::filesystem::path& path,const std::string& content){
 #else
     std::error_code error;std::filesystem::rename(temporary,path,error);
     if(error)throw std::runtime_error("cannot atomically replace state record");
-    int directory=::open(path.parent_path().c_str(),O_RDONLY);if(directory<0||::fsync(directory)!=0){
-        if(directory>=0)::close(directory);throw std::runtime_error("cannot durably flush state directory");}::close(directory);
+    const int directory=::open(path.parent_path().c_str(),O_RDONLY);
+    if(directory<0||::fsync(directory)!=0){
+        if(directory>=0)::close(directory);
+        throw std::runtime_error("cannot durably flush state directory");
+    }
+    ::close(directory);
 #endif
     cleanup.active=false;
 }

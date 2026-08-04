@@ -37,7 +37,11 @@ int main(int argc, char** argv) {
         fprintf(stderr, "cannot load ABI library: %s\n", argv[1]);
         return 3;
     }
+#if defined(_MSC_VER)
+    if (fopen_s(&manifest, argv[2], "rb") != 0) manifest = NULL;
+#else
     manifest = fopen(argv[2], "rb");
+#endif
     if (!manifest) {
         fprintf(stderr, "cannot read ABI export manifest: %s\n", argv[2]);
         close_library(library);

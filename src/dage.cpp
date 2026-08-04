@@ -533,8 +533,8 @@ Value& Value::operator=(const Value& v) { if (this != &v) impl_.reset(new Impl(v
 Value::Value(Value&& v) noexcept : impl_(std::move(v.impl_)) { if (!impl_) impl_.reset(new Impl()); }
 Value& Value::operator=(Value&& v) noexcept { if(this!=&v){impl_=std::move(v.impl_);if(!impl_)impl_.reset(new Impl());}return *this; }
 Value Value::parse(const std::string& json) { Impl i(parse_json(json)); return Value(i); }
-Value Value::object() { Impl i(Json::Value(Json::objectValue)); return Value(i); }
-Value Value::array() { Impl i(Json::Value(Json::arrayValue)); return Value(i); }
+Value Value::object() { Impl i{Json::Value(Json::objectValue)}; return Value(i); }
+Value Value::array() { Impl i{Json::Value(Json::arrayValue)}; return Value(i); }
 Value::Type Value::type() const {
     if(impl_->value.isNull())return Type::Null;
     if(impl_->value.isBool())return Type::Boolean;
@@ -768,6 +768,7 @@ std::vector<Diagnostic> Engine::validate(const std::string& text)const {
     try{root=parse_workflow_json(text,impl_->workflow_limits);}catch(const std::exception& e){
         const std::string message=e.what();const bool limited=message.find("WORKFLOW_")==0;
         add_diag(d,Severity::Error,limited?message.substr(0,message.find(':')):"INVALID_JSON","/",message);return d;}
+    try {
     if(!root.isObject()){add_diag(d,Severity::Error,"INVALID_ROOT","/","Root must be an object.");return d;}
     const std::set<std::string> top={"format","format_version","id","name","description","entry","input","output","limits","defaults","nodes"};
     std::vector<std::string> topnames=root.getMemberNames();for(std::size_t i=0;i<topnames.size();++i)
@@ -856,6 +857,9 @@ std::vector<Diagnostic> Engine::validate(const std::string& text)const {
             else if(nodes.isMember(to)&&active.count(to)==0)dfs(to,active);
         }}active.erase(id);
     };if(nodes.isMember(entry)){std::set<std::string>a;dfs(entry,a);}
+    }catch(const Json::LogicError& error){
+        add_diag(d,Severity::Error,"INVALID_FIELD_TYPE","/",error.what());
+    }
     return d;
 }
 
@@ -1133,6 +1137,7 @@ public:
         std::size_t in_flight=0;
         std::size_t success_count=0;
         std::size_t failure_count=0;
+        bool launching_batch=false;
         bool batch_ready=false;
         bool terminal=false;
         ExecutionResult terminal_result=ExecutionResult::ok(Value::object());
@@ -1750,6 +1755,10 @@ ExecutionResult Run::execute_step(const Value& public_input) {
                 if(pending->next_index>=pending->branches.size())break;
 
                 const std::size_t end=std::min(pending->branches.size(),pending->next_index+pending->max_parallel);
+                {
+                    std::lock_guard<std::mutex> lock(pending->mutex);
+                    pending->launching_batch=true;
+                }
                 while(pending->next_index<end){
                     const std::string branch=pending->branches[pending->next_index++];
                     const std::string child_id=state["_parallel_children"][current][branch].asString();
@@ -1789,7 +1798,8 @@ ExecutionResult Run::execute_step(const Value& public_input) {
                             {
                                 std::lock_guard<std::mutex> lock(pending->mutex);
                                 pending->batch_results.push_back(std::make_pair(branch,branch_result));
-                                if(--pending->in_flight==0)pending->batch_ready=true;
+                                if(--pending->in_flight==0&&!pending->launching_batch)
+                                    pending->batch_ready=true;
                                 batch_ready=pending->batch_ready;
                             }
                             {
@@ -1798,6 +1808,11 @@ ExecutionResult Run::execute_step(const Value& public_input) {
                             }
                             if(resume)try{parent->scheduler->schedule_continuation(resume);}catch(...){}
                         });
+                }
+                {
+                    std::lock_guard<std::mutex> lock(pending->mutex);
+                    pending->launching_batch=false;
+                    if(pending->in_flight==0)pending->batch_ready=true;
                 }
             }
             const bool enough=pending->mode=="any"?pending->success_count>0:
@@ -1961,21 +1976,29 @@ void Run::execute_async(const Value& input,const RunCompletion& completion){
     }
     try{impl_->scheduler->schedule_continuation(*drive);}
     catch(const std::exception& ex){
-        std::lock_guard<std::mutex> lock(impl_->continuation_mutex);
-        impl_->callback_delivered=true;impl_->run_completion=RunCompletion();
-        impl_->resume_drive=std::function<void()>();
+        {
+            std::lock_guard<std::mutex> lock(impl_->continuation_mutex);
+            impl_->callback_delivered=true;impl_->run_completion=RunCompletion();
+            impl_->resume_drive=std::function<void()>();
+        }
+        *drive=std::function<void()>();
         completion(ExecutionResult::fail("resource_limit","SCHEDULER_REJECTED",ex.what(),true));
     }
 }
 
 ExecutionResult Run::execute(const Value& input){
-    std::mutex mutex;std::condition_variable ready;bool done=false;
-    ExecutionResult result=ExecutionResult::fail("internal_error","NOT_COMPLETED","Run did not complete.");
-    execute_async(input,[&](const ExecutionResult& value){
-        {std::lock_guard<std::mutex> lock(mutex);result=value;done=true;}ready.notify_one();
+    struct WaitState {
+        std::mutex mutex;std::condition_variable ready;bool done=false;
+        ExecutionResult result=ExecutionResult::fail(
+            "internal_error","NOT_COMPLETED","Run did not complete.");
+    };
+    std::shared_ptr<WaitState> wait(new WaitState());
+    execute_async(input,[wait](const ExecutionResult& value){
+        {std::lock_guard<std::mutex> lock(wait->mutex);wait->result=value;wait->done=true;}
+        wait->ready.notify_one();
     });
-    std::unique_lock<std::mutex> lock(mutex);ready.wait(lock,[&](){return done;});
-    return result;
+    std::unique_lock<std::mutex> lock(wait->mutex);wait->ready.wait(lock,[&](){return wait->done;});
+    return wait->result;
 }
 
 ExecutionResult Run::resume(const Value& human_output){

@@ -59,7 +59,8 @@ Result<bool> write_bytes(const std::filesystem::path& path,const std::uint8_t* d
     if(file<0)return Result<bool>::failure(tool_error("FILE_CREATE_FAILED","cannot create temporary file"));
     std::size_t offset=0;bool ok=true;while(offset<size){const ssize_t written=::write(file,data+offset,size-offset);
         if(written<=0){ok=false;break;}offset+=static_cast<std::size_t>(written);}
-    if(ok&&durable)ok=::fsync(file)==0;if(::close(file)!=0)ok=false;
+    if(ok&&durable)ok=::fsync(file)==0;
+    if(::close(file)!=0)ok=false;
     if(!ok){::unlink(path.c_str());return Result<bool>::failure(tool_error("FILE_WRITE_FAILED","cannot durably write temporary file"));}
 #endif
     return Result<bool>::success(true);

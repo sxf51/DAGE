@@ -34,22 +34,28 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       libFuzzer covers parse/validate/compile/export under ASan/UBSan; Linux TSAN runs Core,
       property, and concurrency suites; a parallel async-completion soak runs briefly on PRs and
       at 80,000 Runs nightly. Completion requires accumulated clean scheduled-run evidence and
-      promotion of every discovered crash/race into a minimized permanent regression corpus.
-      Hosted evidence collection resumes with the next published branch now that CI capacity is
-      available again.
-- [-] Warning-clean supported toolchains. All DAGE-owned Core, tools, examples, benchmarks, C/C++
-      ABI fixtures, and tests now build clean under GCC/MinGW with
-      `-Wall -Wextra -Wpedantic -Werror`; misleading control flow, initialization order, and dead
-      functions were removed. Every CI configuration enables the gate. Standard CMake dependency
-      targets with pkg-config fallback plus a vcpkg manifest enable a new MSVC `/W4 /WX` job.
-      Completion requires the first clean GCC, Clang, AppleClang, MinGW, and MSVC CI matrix run.
+      promotion of every discovered crash/race into a minimized permanent regression corpus. The
+      first hosted run promoted a JsonCpp field-type termination into the permanent corpus and
+      replaced synchronous execute's stack-borrowed completion wait state with shared lifetime;
+      scheduler rejection also breaks the self-referential drive closure before returning.
+      Parallel conformance now uses an observable two-branch rendezvous instead of a hosted-runner
+      wall-clock threshold, and the success-path soak provisions its bounded queue independently
+      of machine scheduling noise; saturation remains covered by deterministic rejection tests.
+      ARM macOS then exposed and fixed an immediate-completion race: a parallel batch is not
+      publishable until every child in that batch has been registered, preventing early parent
+      cleanup from abandoning later children. Soak failures retain their first structured error.
+      A complete hosted PR matrix is now clean across ASan/UBSan, TSAN, fuzz smoke and concurrency
+      soak. Completion still requires accumulated clean scheduled-run evidence. Lease expiry
+      conformance waits on observable reclaimed state with a bounded deadline instead of assuming
+      a scheduler-sensitive millisecond sleep.
 - [-] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and
       pkg-config packages now install shared/static Core, optional extension targets, headers, and
       CLI; clean external consumers execute a real Workflow. CI covers shared Linux and macOS
       x64/arm64 plus MinGW/MSVC x64, a separate static consumer gate, and architecture-labelled
       unsigned CPack archives. Local strict MinGW shared/static installs and the shared archive
-      pass. Completion requires the first clean hosted matrix and an exercised signed-release
-      procedure; unsigned CI archives are explicitly not production artifacts.
+      pass. The first complete hosted x64/arm64 matrix and installed consumer suite are clean.
+      Completion still requires an exercised signed-release procedure; unsigned CI archives are
+      explicitly not production artifacts.
 - [-] Threat model, security review, operational guide, LTS policy, and release process. Trust
       boundaries, principal threats, residual host/SPI risks, production readiness and failure
       response, upgrade/rollback, capacity signals, proposed 1.x support windows, emergency
@@ -63,7 +69,9 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       enabled dependency version is unknown, and signing requires exactly one inventory artifact.
       Both creation and post-download verification validate its schema, unique dependency names,
       exact enabled versions, consumers, exact release-version binding and signed digest instead of
-      trusting an artifact role label.
+      trusting an artifact role label. GitHub workflows use least-privilege read permissions and
+      pin current official Actions to immutable reviewed commit SHAs rather than movable tags;
+      feature branches run the PR matrix once instead of duplicating push and PR executions.
       Completion requires an
       independent review with findings disposition, freezing the proposed support window at the
       first 1.0 RC, and a controlled offline/HSM-key clean-environment release exercise.
@@ -72,13 +80,29 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       manifest that dynamically verifies all 52 current C ABI exports on every shared-library
       platform. A C99 layout gate checks the exact 64-bit little-endian public struct sizes/member
       offsets and enum widths under each Tier-1 compiler; the native platform C calling convention
-      and exclusion of 32-bit/big-endian are explicit. A candidate native/language compatibility
+      and exclusion of 32-bit/big-endian are explicit. The frozen stub carries the same VERSION and
+      SOVERSION contract as the runtime, so old-binary replacement exercises the actual ELF SONAME
+      and Mach-O install-name layout rather than mismatched symlink basenames. On MSVC the isolated
+      old-binary test stages the candidate DAGE DLL beside the frozen binary while exposing the
+      candidate build directory only for its vcpkg runtime dependencies. A candidate native/language compatibility
       matrix distinguishes tested toolchains from future support promises. Python 3.12, Java 21,
       .NET 10, Rust 1.75 and Node.js 24 candidate minimums are enforced in package/build metadata
-      and CI. Completion requires the 1.0 RC freeze review and signed historical binaries in CI.
+      and CI. Windows binding conformance derives the generated DLL's UCRT64 dependency closure
+      with `ldd` and deploys it app-local instead of assuming a global MSYS2 installation path.
+      The dependency-free Rust crate keeps a v3 lockfile readable by its declared Rust 1.75 floor.
+      Its async smoke test uses the stable `Wake` API rather than the later `Waker::noop` API.
+      Windows Rust conformance uses the GNU target and discovered GCC linker matching the MinGW
+      runtime under test, rather than accidentally mixing MSVC Rust with a GNU import library.
+      Completion requires the 1.0 RC freeze review and signed historical binaries in CI.
 
 ## Completed
 
+- [x] Warning-clean supported toolchains. DAGE-owned Core, tools, examples, benchmarks, C/C++ ABI
+      fixtures, tests and binding adapters pass the first complete hosted GCC, Clang, AppleClang,
+      MinGW and MSVC matrix with warnings as errors. Standard CMake dependency targets and vcpkg
+      support native toolchains. The reviewed suppressions are limited to private pImpl/STL C4251
+      diagnostics and third-party node-addon-api C4127; secure-CRT diagnostics remain fixed in
+      source. Installed Windows consumers use app-local runtime deployment.
 - [x] Workflow admission enforces host-configurable source-byte, JSON-depth, node, edge,
       expression, UTF-8 literal and deterministic compiled-IR budgets. Direct, registered,
       Bundle-loaded and Patch-produced Workflows converge on the same bounded load path with
