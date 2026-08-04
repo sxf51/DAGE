@@ -1,0 +1,15 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "entry": "done",
+  "nodes": {
+    "done": {
+      "type": "end",
+      "name": "done-完成",
+      "input": {
+        "conformance": true,
+        "utf8": "基础设施-🚀"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: DAGE
+Description: Small, embeddable, provider-agnostic DAG runtime for AI applications
+Version: @PROJECT_VERSION@
+Requires.private: jsoncpp openssl
+Libs: -L${libdir} -ldage
+Cflags: -I${includedir}

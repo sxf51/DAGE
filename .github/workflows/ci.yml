@@ -1,0 +1,286 @@
+name: ci
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04-arm, macos-15-intel, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja pkg-config jsoncpp openssl@3 zlib
+      - name: Configure
+        run: cmake -S . -B build-ci -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_BENCHMARKS=ON -DDAGE_BUILD_BINDINGS=OFF -DDAGE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build-ci
+      - name: Test frozen C ABI compatibility
+        run: ctest --test-dir build-ci -L abi --output-on-failure
+      - name: Test runtime, including multi-process recovery
+        run: ctest --test-dir build-ci -LE abi --output-on-failure
+      - name: Validate installed CMake package
+        run: |
+          cmake --install build-ci --prefix "$PWD/stage"
+          cmake -S tests/package/consumer -B build-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/stage"
+          cmake --build build-consumer
+          ctest --test-dir build-consumer --output-on-failure
+      - name: Build unsigned CI archive
+        run: cpack --config build-ci/CPackConfig.cmake
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dage-${{ matrix.os }}-unsigned
+          path: build-ci/packages/
+
+  sanitizers:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
+      - name: Configure ASan and UBSan
+        run: cmake -S . -B build-san -G Ninja -DDAGE_BUILD_TESTS=ON -DDAGE_ENABLE_SANITIZERS=ON -DDAGE_SANITIZERS=address,undefined -DDAGE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build-san
+      - name: Run sanitizer suite
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1:check_initialization_order=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build-san -LE abi --output-on-failure
+
+  thread-sanitizer:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
+      - name: Configure ThreadSanitizer
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -S . -B build-tsan -G Ninja -DDAGE_BUILD_SHARED=OFF -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_TOOLS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_ENABLE_SANITIZERS=ON -DDAGE_SANITIZERS=thread -DDAGE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build-tsan
+      - name: Run concurrency-sensitive suites
+        env:
+          TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
+        run: ctest --test-dir build-tsan -L "core|property|concurrency|failure" --output-on-failure
+
+  fuzz-smoke:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
+      - name: Configure libFuzzer
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -S . -B build-fuzz -G Ninja -DDAGE_BUILD_SHARED=OFF -DDAGE_BUILD_TESTS=OFF -DDAGE_BUILD_TOOLS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_FUZZERS=ON -DDAGE_ENABLE_SANITIZERS=ON -DDAGE_SANITIZERS=address,undefined -DDAGE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build-fuzz --target dage_workflow_fuzzer
+      - name: Run bounded fuzz smoke
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: mkdir -p fuzz-artifacts && build-fuzz/dage_workflow_fuzzer -runs=2000 -artifact_prefix=fuzz-artifacts/ fuzz/corpus/workflow
+      - name: Upload fuzz failure artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-fuzz-smoke-failure
+          path: fuzz-artifacts/
+          if-no-files-found: ignore
+
+  windows:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-jsoncpp
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-pkgconf
+      - name: Configure
+        run: cmake -S . -B build-ci -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_BENCHMARKS=ON -DDAGE_BUILD_BINDINGS=OFF -DDAGE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build-ci
+      - name: Test frozen C ABI compatibility
+        run: ctest --test-dir build-ci -L abi --output-on-failure
+      - name: Test golden vectors and runtime
+        run: ctest --test-dir build-ci -LE abi --output-on-failure
+      - name: Validate installed CMake package
+        run: |
+          cmake --install build-ci --prefix "$PWD/stage"
+          cmake -S tests/package/consumer -B build-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/stage"
+          cmake --build build-consumer
+          ctest --test-dir build-consumer --output-on-failure
+      - name: Build unsigned CI archive
+        run: cpack --config build-ci/CPackConfig.cmake
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dage-windows-mingw-x64-unsigned
+          path: build-ci/packages/
+
+  windows-msvc:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure MSVC with vcpkg manifest
+        shell: pwsh
+        run: |
+          $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT "scripts/buildsystems/vcpkg.cmake"
+          cmake -S . -B build-msvc -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+            -DDAGE_BUILD_SHARED=ON `
+            -DDAGE_BUILD_TESTS=ON `
+            -DDAGE_BUILD_BENCHMARKS=ON `
+            -DDAGE_WARNINGS_AS_ERRORS=ON
+      - name: Build with /W4 /WX
+        run: cmake --build build-msvc --config Release --parallel
+      - name: Run MSVC tests
+        run: ctest --test-dir build-msvc -C Release --output-on-failure -j 4
+      - name: Validate installed MSVC package
+        shell: pwsh
+        run: |
+          $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT "scripts/buildsystems/vcpkg.cmake"
+          cmake --install build-msvc --config Release --prefix "$pwd/stage"
+          cmake -S tests/package/consumer -B build-msvc-consumer -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+            -DCMAKE_PREFIX_PATH="$pwd/stage"
+          cmake --build build-msvc-consumer --config Release --parallel
+          ctest --test-dir build-msvc-consumer -C Release --output-on-failure
+      - name: Build unsigned MSVC CI archive
+        run: cpack --config build-msvc/CPackConfig.cmake -C Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dage-windows-msvc-x64-unsigned
+          path: build-msvc/packages/
+
+  static-package:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
+      - name: Configure static distribution
+        run: cmake -S . -B build-static -G Ninja -DDAGE_BUILD_SHARED=OFF -DDAGE_BUILD_TESTS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=Release
+      - name: Build and install
+        run: |
+          cmake --build build-static
+          cmake --install build-static --prefix "$PWD/stage-static"
+      - name: Validate static installed CMake package
+        run: |
+          cmake -S tests/package/consumer -B build-static-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/stage-static"
+          cmake --build build-static-consumer
+          ctest --test-dir build-static-consumer --output-on-failure
+
+  language-bindings:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/node/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - uses: dtolnay/rust-toolchain@1.75.0
+        with:
+          components: clippy,rustfmt
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-jsoncpp
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-pkgconf
+      - name: Configure shared runtime and JNI adapter
+        shell: msys2 {0}
+        run: cmake -S . -B build-bindings -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_BINDINGS=ON -DDAGE_WARNINGS_AS_ERRORS=ON
+      - name: Build shared runtime and JNI adapter
+        shell: msys2 {0}
+        run: cmake --build build-bindings
+      - name: Build Node-API adapter
+        working-directory: bindings/node
+        run: npm ci && npm run build:native
+      - name: Run Python conformance
+        env:
+          DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
+          DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
+        run: |
+          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          python bindings/python/conformance.py
+      - name: Run Java conformance
+        run: |
+          javac --release 21 -Xlint:all -Werror -d bindings/java/out bindings/java/io/dage/DageException.java bindings/java/io/dage/AsyncExecutor.java bindings/java/io/dage/AsyncExecutionContext.java bindings/java/io/dage/AsyncExecutorBridge.java bindings/java/io/dage/Engine.java bindings/java/io/dage/Workflow.java bindings/java/io/dage/Run.java bindings/java/io/dage/Smoke.java
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          java "-Djava.library.path=build-bindings" -cp bindings/java/out io.dage.Smoke tests/conformance/bindings
+      - name: Run C# conformance
+        env:
+          DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
+        run: |
+          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          dotnet run --project bindings/csharp/Dage.csproj -c Release -- tests/conformance/bindings
+      - name: Run Rust conformance
+        env:
+          DAGE_LIB_DIR: ${{ github.workspace }}/build-bindings
+          DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
+        run: |
+          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          cargo fmt --manifest-path bindings/rust/Cargo.toml -- --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo clippy --manifest-path bindings/rust/Cargo.toml --all-targets -- -D warnings
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test --manifest-path bindings/rust/Cargo.toml
+      - name: Run Node.js conformance
+        env:
+          DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
+          DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
+        run: |
+          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          node bindings/node/native-smoke.js

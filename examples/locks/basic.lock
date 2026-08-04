@@ -1,0 +1,12 @@
+{
+  "format": "dage-lock",
+  "lock_version": 1,
+  "bundles": {
+    "org.dage.examples.basic": {
+      "version": "1.0.0",
+      "digest": "sha256:c72df50d4f3a2425a8e336cffbaa809eb626ffa426a9e79ba1f26a5b108ae6fb",
+      "source": "root",
+      "signatures": []
+    }
+  }
+}

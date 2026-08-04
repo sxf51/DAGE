@@ -1,0 +1,7 @@
+LIBRARY libdage.dll
+EXPORTS
+    dage_engine_create
+    dage_engine_destroy
+    dage_engine_load
+    dage_workflow_destroy
+    dage_workflow_export_mermaid

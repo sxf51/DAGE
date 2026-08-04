@@ -1,0 +1,26 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "id": "basic",
+  "entry": "echo",
+  "nodes": {
+    "echo": {
+      "type": "tool",
+      "executor": "echo",
+      "effects": {
+        "kind": "pure",
+        "replay": "safe"
+      },
+      "input": {
+        "message": "${workflow.input.message}"
+      },
+      "next": "done"
+    },
+    "done": {
+      "type": "end",
+      "input": {
+        "result": "${nodes.echo.output.message}"
+      }
+    }
+  }
+}

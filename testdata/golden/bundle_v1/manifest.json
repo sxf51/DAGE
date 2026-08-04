@@ -1,0 +1,27 @@
+{
+  "workflows": {
+    "main": "workflows/main.json"
+  },
+  "version": "1.2.3",
+  "signatures": [
+    {
+      "signature": "ribHBq80/3m16eT6p1YoOKaVhQ7dGRf//41xw9gr6wv2skhHiaEb/DDuVs7zpoqyvqmObN9EO/KqVkIOZ3jzCw==",
+      "key_id": "golden-ed25519",
+      "algorithm": "ed25519",
+      "signed_at": "2026-07-27T00:00:00Z"
+    }
+  ],
+  "id": "org.dage.golden",
+  "format_version": "0.2.0",
+  "format": "dage-bundle",
+  "dependencies": {},
+  "config": {
+    "unicode": "DAGE-\u4e2d\u6587",
+    "\u00e9": 1,
+    "\u4e2d": 2,
+    "temperature": 0.8,
+    "negative_zero": -0.0,
+    "escaped": "line\nquote\"slash\\",
+    "enabled": true
+  }
+}

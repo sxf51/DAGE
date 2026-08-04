@@ -1,0 +1,10 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "entry": "missing",
+  "nodes": {
+    "done": {
+      "type": "end"
+    }
+  }
+}

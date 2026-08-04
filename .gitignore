@@ -1,0 +1,9 @@
+/build*/
+/bindings/node/node_modules/
+/bindings/node/build/
+/bindings/rust/target/
+/bindings/csharp/bin/
+/bindings/csharp/obj/
+/bindings/java/out/
+__pycache__/
+*.pyc

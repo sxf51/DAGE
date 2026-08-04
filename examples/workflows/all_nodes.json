@@ -1,0 +1,42 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "id": "all_nodes",
+  "name": "All node formats",
+  "entry": "start",
+  "limits": {"max_steps": 30, "max_parallel": 2},
+  "nodes": {
+    "start": {"type": "start", "next": "decide"},
+    "decide": {
+      "type": "condition",
+      "next": [
+        {"to": "fan_out", "when": "${workflow.input.parallel}"},
+        {"to": "llm_call", "otherwise": true}
+      ]
+    },
+    "fan_out": {
+      "type": "parallel",
+      "branches": ["tool_call", "transform_data"],
+      "join": "merge",
+      "policy": {"mode": "all", "fail": "collect"}
+    },
+    "tool_call": {
+      "type": "tool",
+      "executor": "echo",
+      "effects": {"kind": "external_read", "replay": "safe"}
+    },
+    "transform_data": {"type": "transform", "executor": "echo"},
+    "merge": {"type": "join", "executor": "echo", "next": "llm_call"},
+    "llm_call": {"type": "llm", "executor": "echo", "next": "subflow_call"},
+    "subflow_call": {"type": "subflow", "config": {"workflow": "child"}, "next": "approval"},
+    "approval": {"type": "human", "executor": "echo", "next": "extension"},
+    "extension": {
+      "type": "custom",
+      "executor": "echo",
+      "effects": {"kind": "pure", "replay": "safe"},
+      "next": "marker"
+    },
+    "marker": {"type": "noop", "next": "finish"},
+    "finish": {"type": "end", "input": {"ok": true}}
+  }
+}

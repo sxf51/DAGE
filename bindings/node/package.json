@@ -1,0 +1,18 @@
+{
+  "name": "@dage/runtime",
+  "version": "0.2.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build:native": "node-gyp rebuild",
+    "smoke": "node smoke.js",
+    "smoke:native": "node native-smoke.js"
+  },
+  "devDependencies": {
+    "node-addon-api": "^8.9.0",
+    "node-gyp": "^12.4.0"
+  }
+}

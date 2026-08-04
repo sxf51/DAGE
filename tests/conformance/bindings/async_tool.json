@@ -1,0 +1,16 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "entry": "call",
+  "nodes": {
+    "call": {
+      "type": "tool",
+      "executor": "__EXECUTOR__",
+      "effects": {
+        "kind": "pure",
+        "replay": "safe"
+      },
+      "input": "${workflow.input}"
+    }
+  }
+}

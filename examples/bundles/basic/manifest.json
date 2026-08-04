@@ -1,0 +1,11 @@
+{
+  "format": "dage-bundle",
+  "format_version": "0.2.0",
+  "id": "org.dage.examples.basic",
+  "version": "1.0.0",
+  "workflows": {
+    "main": "workflows/main.json"
+  },
+  "dependencies": {},
+  "signatures": []
+}

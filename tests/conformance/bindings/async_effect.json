@@ -1,0 +1,17 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "entry": "call",
+  "nodes": {
+    "call": {
+      "type": "tool",
+      "executor": "__EXECUTOR__",
+      "effects": {
+        "kind": "external_write",
+        "replay": "idempotent",
+        "idempotency_key": "${run.id}:${node.id}"
+      },
+      "input": "${workflow.input}"
+    }
+  }
+}

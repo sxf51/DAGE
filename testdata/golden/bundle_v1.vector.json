@@ -1,0 +1,11 @@
+{
+  "vector_version": 1,
+  "description": "DAGE canonical Bundle and Ed25519 golden vector",
+  "private_seed_hex_for_test_only": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+  "signature_base64": "ribHBq80/3m16eT6p1YoOKaVhQ7dGRf//41xw9gr6wv2skhHiaEb/DDuVs7zpoqyvqmObN9EO/KqVkIOZ3jzCw==",
+  "canonical_unsigned_manifest": "{\"config\":{\"enabled\":true,\"escaped\":\"line\\nquote\\\"slash\\\\\",\"negative_zero\":0,\"temperature\":8.00000000000000044e-01,\"unicode\":\"DAGE-中文\",\"é\":1,\"中\":2},\"dependencies\":{},\"format\":\"dage-bundle\",\"format_version\":\"0.2.0\",\"id\":\"org.dage.golden\",\"version\":\"1.2.3\",\"workflows\":{\"main\":\"workflows/main.json\"}}",
+  "canonical_manifest": "{\"config\":{\"enabled\":true,\"escaped\":\"line\\nquote\\\"slash\\\\\",\"negative_zero\":0,\"temperature\":8.00000000000000044e-01,\"unicode\":\"DAGE-中文\",\"é\":1,\"中\":2},\"dependencies\":{},\"format\":\"dage-bundle\",\"format_version\":\"0.2.0\",\"id\":\"org.dage.golden\",\"signatures\":[{\"algorithm\":\"ed25519\",\"key_id\":\"golden-ed25519\",\"signature\":\"ribHBq80/3m16eT6p1YoOKaVhQ7dGRf//41xw9gr6wv2skhHiaEb/DDuVs7zpoqyvqmObN9EO/KqVkIOZ3jzCw==\",\"signed_at\":\"2026-07-27T00:00:00Z\"}],\"version\":\"1.2.3\",\"workflows\":{\"main\":\"workflows/main.json\"}}",
+  "signing_payload": "manifest.json\nsha256:837d4c599eb939d15ba3191f49c7d41b82e0a48c6877d1d4b22db36b64042f0e\nassets/prompt.txt\nsha256:84b93cca6a8d9391ef4d2860e2b0eb33a6dafd54b483dd04e782b70948991929\nworkflows/main.json\nsha256:833b884daaac5337ea089ef7bd7cac41ddc6a0ebf679b08854750bcb502fbaeb\n",
+  "bundle_digest": "sha256:0cb55992cf28832224a05ec32a4cc01cb87d593bde399e14d50d231f2a9e522b"
+}

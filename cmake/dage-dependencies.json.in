@@ -1,0 +1,30 @@
+{
+  "build": {
+    "compiler": "@CMAKE_CXX_COMPILER_ID@",
+    "compiler_version": "@CMAKE_CXX_COMPILER_VERSION@",
+    "shared": @DAGE_INVENTORY_SHARED@,
+    "system": "@CMAKE_SYSTEM_NAME@",
+    "system_processor": "@CMAKE_SYSTEM_PROCESSOR@"
+  },
+  "dage_version": "@PROJECT_VERSION@",
+  "dependencies": [
+    {
+      "name": "jsoncpp",
+      "required_by": ["dage", "dage_bundle_tools"],
+      "version": "@DAGE_JSONCPP_VERSION@"
+    },
+    {
+      "name": "openssl",
+      "required_by": ["dage"],
+      "version": "@DAGE_OPENSSL_VERSION@"
+    },
+    {
+      "enabled": @DAGE_INVENTORY_BUNDLE_TOOLS@,
+      "name": "zlib",
+      "required_by": ["dage_bundle_tools"],
+      "version": "@DAGE_ZLIB_VERSION@"
+    }
+  ],
+  "format": "dage-dependency-inventory",
+  "format_version": 1
+}

@@ -1,0 +1,1 @@
+{"format":"dage-workflow","format_version":"0.2.0","entry":"a","nodes":{"a":{"type":"noop","next":"z"},"z":{"type":"end","input":{"ok":true}}}}

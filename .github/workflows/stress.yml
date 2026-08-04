@@ -1,0 +1,56 @@
+name: stress
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stress-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly-fuzz-and-soak:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libjsoncpp-dev libssl-dev zlib1g-dev
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -S . -B build-stress -G Ninja -DDAGE_BUILD_SHARED=OFF -DDAGE_BUILD_TESTS=ON -DDAGE_BUILD_TOOLS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_FUZZERS=ON -DDAGE_ENABLE_SANITIZERS=ON -DDAGE_SANITIZERS=address,undefined -DDAGE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build-stress --target dage_workflow_fuzzer dage_concurrency_soak
+      - name: Restore evolving fuzz corpus
+        uses: actions/cache@v4
+        with:
+          path: .fuzz-corpus/workflow
+          key: workflow-fuzz-${{ github.run_id }}
+          restore-keys: |
+            workflow-fuzz-
+      - name: Fuzz for ten minutes
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: |
+          mkdir -p .fuzz-corpus/workflow fuzz-artifacts
+          cp -n fuzz/corpus/workflow/* .fuzz-corpus/workflow/
+          build-stress/dage_workflow_fuzzer -max_total_time=600 -timeout=10 -artifact_prefix=fuzz-artifacts/ .fuzz-corpus/workflow
+      - name: Run extended concurrency soak
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: build-stress/dage_concurrency_soak --threads 8 --iterations 10000
+      - name: Upload stress failure artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-stress-failure
+          path: fuzz-artifacts/
+          if-no-files-found: ignore

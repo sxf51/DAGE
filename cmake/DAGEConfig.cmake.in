@@ -1,0 +1,29 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if(@DAGE_CONFIG_JSONCPP_PKG@)
+  find_dependency(PkgConfig)
+  pkg_check_modules(JSONCPP REQUIRED IMPORTED_TARGET jsoncpp)
+else()
+  find_dependency(jsoncpp CONFIG)
+endif()
+
+if(@DAGE_CONFIG_OPENSSL_PKG@)
+  find_dependency(PkgConfig)
+  pkg_check_modules(OPENSSL REQUIRED IMPORTED_TARGET openssl)
+else()
+  find_dependency(OpenSSL)
+endif()
+
+if(@DAGE_BUILD_BUNDLE_TOOLS@)
+  if(@DAGE_CONFIG_ZLIB_PKG@)
+    find_dependency(PkgConfig)
+    pkg_check_modules(ZLIB_PC REQUIRED IMPORTED_TARGET zlib)
+  else()
+    find_dependency(ZLIB)
+  endif()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/DAGETargets.cmake")
+check_required_components(DAGE)
