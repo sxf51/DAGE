@@ -245,6 +245,9 @@ jobs:
             mingw-w64-ucrt-x86_64-openssl
             mingw-w64-ucrt-x86_64-zlib
             mingw-w64-ucrt-x86_64-pkgconf
+      - name: Export discovered UCRT64 runtime path
+        shell: msys2 {0}
+        run: echo "$(cygpath -w /ucrt64/bin)" >> "$GITHUB_PATH"
       - name: Configure shared runtime and JNI adapter
         shell: msys2 {0}
         run: cmake -S . -B build-bindings -G Ninja -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=OFF -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_BINDINGS=ON -DDAGE_WARNINGS_AS_ERRORS=ON
@@ -259,26 +262,26 @@ jobs:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           python bindings/python/conformance.py
       - name: Run Java conformance
         run: |
           javac --release 21 -Xlint:all -Werror -d bindings/java/out bindings/java/io/dage/DageException.java bindings/java/io/dage/AsyncExecutor.java bindings/java/io/dage/AsyncExecutionContext.java bindings/java/io/dage/AsyncExecutorBridge.java bindings/java/io/dage/Engine.java bindings/java/io/dage/Workflow.java bindings/java/io/dage/Run.java bindings/java/io/dage/Smoke.java
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           java "-Djava.library.path=build-bindings" -cp bindings/java/out io.dage.Smoke tests/conformance/bindings
       - name: Run C# conformance
         env:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           dotnet run --project bindings/csharp/Dage.csproj -c Release -- tests/conformance/bindings
       - name: Run Rust conformance
         env:
           DAGE_LIB_DIR: ${{ github.workspace }}/build-bindings
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           cargo fmt --manifest-path bindings/rust/Cargo.toml -- --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo clippy --manifest-path bindings/rust/Cargo.toml --all-targets -- -D warnings
@@ -289,5 +292,5 @@ jobs:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
         run: |
-          $env:PATH = "${{ github.workspace }}/build-bindings;C:\msys64\ucrt64\bin;$env:PATH"
+          $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           node bindings/node/native-smoke.js
