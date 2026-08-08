@@ -4,7 +4,7 @@ DAGE's stable cross-language boundary is the C ABI. Bindings adapt ownership, er
 callbacks, asynchronous completion, and cancellation to language conventions; they must not
 reimplement Workflow semantics.
 
-Candidate 1.0 minimums are Python 3.12, Java 21, .NET 10, Rust 1.75, and Node.js 24.
+Candidate 1.0 minimums are Python 3.11, Java 21, .NET 10, Rust 1.75, and Node.js 24.
 Package/build metadata and CI enforce these baselines; see the
 [compatibility matrix](compatibility_matrix.md). A host runtime that has reached upstream end of
 life is not a production-supported configuration even if the binding happens to load.

@@ -85,7 +85,7 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       and Mach-O install-name layout rather than mismatched symlink basenames. On MSVC the isolated
       old-binary test stages the candidate DAGE DLL beside the frozen binary while exposing the
       candidate build directory only for its vcpkg runtime dependencies. A candidate native/language compatibility
-      matrix distinguishes tested toolchains from future support promises. Python 3.12, Java 21,
+      matrix distinguishes tested toolchains from future support promises. Python 3.11, Java 21,
       .NET 10, Rust 1.75 and Node.js 24 candidate minimums are enforced in package/build metadata
       and CI. Windows binding conformance derives the generated DLL's UCRT64 dependency closure
       with `ldd` and deploys it app-local instead of assuming a global MSYS2 installation path.

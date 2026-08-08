@@ -7,6 +7,36 @@ import sys
 import threading
 
 
+_DLL_DIRECTORY_HANDLES = []
+
+
+def _prepare_dll_search(library):
+    if sys.platform != "win32" or not hasattr(os, "add_dll_directory"):
+        return
+
+    library_directory = os.path.dirname(os.path.abspath(library))
+    candidates = [library_directory]
+    candidates.extend(os.environ.get("PATH", "").split(os.pathsep))
+    runtime_files = (
+        "libstdc++-6.dll",
+        "libgcc_s_seh-1.dll",
+        "libwinpthread-1.dll",
+        "libcrypto-3-x64.dll",
+    )
+    for directory in candidates:
+        if not directory or not os.path.isdir(directory):
+            continue
+        if directory != library_directory and not all(
+            os.path.exists(os.path.join(directory, filename))
+            for filename in runtime_files
+        ):
+            continue
+        try:
+            _DLL_DIRECTORY_HANDLES.append(os.add_dll_directory(directory))
+        except OSError:
+            pass
+
+
 class DageError(RuntimeError):
     def __init__(self, status):
         self.status = status
@@ -16,8 +46,13 @@ class DageError(RuntimeError):
 def _default_library():
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     names = ["libdage.dll", "dage.dll"] if sys.platform == "win32" else ["libdage.dylib", "libdage.so"]
+    directories = (
+        os.path.join(root, "build"),
+        os.path.join(root, "build-shared"),
+        root,
+    )
     for name in names:
-        for directory in (os.path.join(root, "build"), root):
+        for directory in directories:
             path = os.path.join(directory, name)
             if os.path.exists(path):
                 return path
@@ -147,7 +182,9 @@ class Engine:
     """Owns a native engine. Keep it alive longer than workflows and runs."""
 
     def __init__(self, library=None):
-        self.lib = ctypes.CDLL(library or os.environ.get("DAGE_LIBRARY") or _default_library())
+        library = library or os.environ.get("DAGE_LIBRARY") or _default_library()
+        _prepare_dll_search(library)
+        self.lib = ctypes.CDLL(library)
         self.lib.dage_engine_create.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
         self.lib.dage_engine_create.restype = ctypes.c_int
         self.lib.dage_engine_load.argtypes = [ctypes.c_void_p, _View, ctypes.POINTER(ctypes.c_void_p)]
