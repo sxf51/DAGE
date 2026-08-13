@@ -17,19 +17,7 @@ No active P1 core-product-loop items. New P1 findings must be added here.
 
 ## P2 — Supply chain and language ecosystem
 
-- [!] Ship installable Python wheels instead of requiring hosts to locate a separately built shared
-      library through `DAGE_LIBRARY`. Build and test CPython 3.11-3.13 wheels for supported Linux,
-      macOS, and Windows Tier-1 architectures, bundle or securely resolve the matching native runtime,
-      verify wheel repair/audit output and clean-environment installation, and document ABI/version
-      compatibility plus the supported escape hatch for an externally managed signed DAGE runtime.
-      Platform-wheel staging now fails closed without an explicit native closure, bundled runtime
-      discovery precedes source-tree fallbacks, Engine verifies ABI/runtime compatibility, and a
-      RECORD/native-payload auditor plus clean-install conformance are implemented. A dedicated
-      cibuildwheel matrix defines CPython 3.11-3.13 on Tier-1 Linux/macOS x64/arm64 and Windows x64,
-      with auditwheel/delocate/delvewheel repair. The local Windows x64 wheel passes isolated install
-      and both Python conformance programs without `DAGE_LIBRARY`; completion requires the first clean
-      hosted cross-platform matrix. Blocked on committing/pushing this workflow and obtaining its
-      Linux/macOS/Windows hosted artifacts; local evidence cannot prove the other target platforms.
+No active P2 supply-chain or language-ecosystem items. New P2 findings must be added here.
 
 ## P3 — Evidence for 1.0
 
@@ -96,6 +84,15 @@ No active P1 core-product-loop items. New P1 findings must be added here.
 
 ## Completed
 
+- [x] Installable `dage-runtime` CPython 3.11-3.13 wheels bundle the matching DAGE runtime and
+      private dependency closure instead of requiring `DAGE_LIBRARY`. Platform-wheel staging fails
+      closed without an explicit native closure; bundled runtime discovery precedes source-tree
+      fallbacks; Engine verifies ABI/runtime compatibility; and an externally managed signed runtime
+      remains an explicit escape hatch. The Tier-1 matrix repairs, audits, clean-installs and runs
+      binding plus service-host conformance on manylinux x86_64/arm64, macOS x86_64/arm64 and Windows
+      x64. The first complete hosted matrix and all five retained artifact sets passed at commit
+      `319ba670477e3aa0b8d6247c6764241a7bf3be59`; see
+      `docs/evidence/python-wheels-2026-08-13.md`.
 - [x] Fuzzing and concurrency gates combine independent-model property tests, ASan/UBSan
       libFuzzer, TSAN, deterministic saturation/race regressions and PR/nightly concurrent Run
       soaks. Hosted failures found and permanently fixed JsonCpp type termination, completion-state
