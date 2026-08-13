@@ -27,6 +27,24 @@ cancellation to their host language without changing Workflow semantics.
 
 ## Python asyncio contract
 
+`EngineOptions` configures admission limits. `RunOptions` configures mode, effect permissions,
+deadline, retry budget, trace capture and per-Run quotas. `Engine.runtime_registry()` and
+`has_capability()` allow a host to fail closed before installing adapters. Official wheels verify C
+ABI 1 and the matching `0.2.x` native runtime during Engine construction.
+
+Production adapters are installed with `set_scheduler`, `set_state_store`, `set_trace_sink`, and
+`set_resource_lease_provider`. These callbacks may be invoked concurrently; host implementations
+must be thread-safe. Scheduler tasks are one-shot and must be run or abandoned. StateStore and lease
+outputs transfer owned buffers/handles to Core, while Python roots all ctypes callbacks until Engine
+destruction. Exceptions are contained at the ABI boundary and can be drained with
+`Engine.callback_errors()` for host logging. A TraceSink cannot fail the Run because the native ABI
+defines it as a non-failing observer.
+
+Workflow exposes Patch dry-run, analysis, application and diff. Run exposes snapshot, checkpoint,
+restore and selective rerun; blocking Run operations also have asyncio variants where applicable.
+Run retains its Workflow and Engine, and Engine rejects explicit close while either child type is
+live, preventing native parent/child lifetime inversion.
+
 `Engine.register_async_executor(name, coroutine)` schedules the coroutine on the registration
 event loop. Its signature is `(AsyncExecutionContext, decoded_input)`. Returning a JSON-compatible
 value completes the native Executor; returning `(value, true)` commits a declared effect before
@@ -151,8 +169,16 @@ For local tests, point the binding at the shared library and vectors:
 $env:DAGE_LIBRARY = (Resolve-Path build-abi/libdage.dll).Path
 $env:DAGE_CONFORMANCE_DIR = (Resolve-Path tests/conformance/bindings).Path
 $env:Path = "D:\msys64\ucrt64\bin;$env:Path"
+$env:PYTHONPATH = (Resolve-Path bindings/python/src).Path
 python bindings/python/conformance.py
+python examples/python/service_host.py
 ```
+
+`examples/python/service_host.py` is the executable asyncio service-host contract. It demonstrates
+host-owned async LLM/tool adapters, SQLite-backed durable CAS and cross-process ownership rejection,
+idempotent effect commit fencing, correlated structured traces, resource leases, deadlines and
+cancellation. Its SQLite store, model selection and authorization decisions are examples of host
+policy and are intentionally not part of DAGE Core.
 
 Java receives the vector directory as its first argument. C# accepts the same positional argument.
 Rust uses `DAGE_LIB_DIR` for link discovery and `DAGE_CONFORMANCE_DIR` for vectors. Node.js uses

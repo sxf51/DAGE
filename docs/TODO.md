@@ -17,46 +17,41 @@ No active P1 core-product-loop items. New P1 findings must be added here.
 
 ## P2 — Supply chain and language ecosystem
 
-No active P2 supply-chain or language-ecosystem items. New P2 findings must be added here.
+- [!] Ship installable Python wheels instead of requiring hosts to locate a separately built shared
+      library through `DAGE_LIBRARY`. Build and test CPython 3.11-3.13 wheels for supported Linux,
+      macOS, and Windows Tier-1 architectures, bundle or securely resolve the matching native runtime,
+      verify wheel repair/audit output and clean-environment installation, and document ABI/version
+      compatibility plus the supported escape hatch for an externally managed signed DAGE runtime.
+      Platform-wheel staging now fails closed without an explicit native closure, bundled runtime
+      discovery precedes source-tree fallbacks, Engine verifies ABI/runtime compatibility, and a
+      RECORD/native-payload auditor plus clean-install conformance are implemented. A dedicated
+      cibuildwheel matrix defines CPython 3.11-3.13 on Tier-1 Linux/macOS x64/arm64 and Windows x64,
+      with auditwheel/delocate/delvewheel repair. The local Windows x64 wheel passes isolated install
+      and both Python conformance programs without `DAGE_LIBRARY`; completion requires the first clean
+      hosted cross-platform matrix. Blocked on committing/pushing this workflow and obtaining its
+      Linux/macOS/Windows hosted artifacts; local evidence cannot prove the other target platforms.
 
 ## P3 — Evidence for 1.0
 
-- [-] Fixed-hardware performance budgets. Schema-v2 measurements now cover latency distributions,
+- [!] Fixed-hardware performance budgets. Schema-v2 measurements now cover latency distributions,
       process peak RSS, Checkpoint size, and logical StateStore write amplification. Calibration
       and fail-closed comparison use at least five independent processes, median aggregation,
       explicit machine identity, and reviewed relative limits. Budget-policy schema v2 enforces
       p50/p95/p99 tail latency, exact unique benchmark sets, distinct evidence files and atomic
       baseline publication. Completion requires selecting a dedicated runner, committing its first
       reviewed baseline, and wiring that runner as the timing gate; shared CI remains smoke-only
-      by design.
-- [-] Fuzzing and concurrency evidence. Deterministic property tests compare 250 generated DAGs
-      against an independent path model and verify order-independent semantic digests. Clang
-      libFuzzer covers parse/validate/compile/export under ASan/UBSan; Linux TSAN runs Core,
-      property, and concurrency suites; a parallel async-completion soak runs briefly on PRs and
-      at 80,000 Runs nightly. Completion requires accumulated clean scheduled-run evidence and
-      promotion of every discovered crash/race into a minimized permanent regression corpus. The
-      first hosted run promoted a JsonCpp field-type termination into the permanent corpus and
-      replaced synchronous execute's stack-borrowed completion wait state with shared lifetime;
-      scheduler rejection also breaks the self-referential drive closure before returning.
-      Parallel conformance now uses an observable two-branch rendezvous instead of a hosted-runner
-      wall-clock threshold, and the success-path soak provisions its bounded queue independently
-      of machine scheduling noise; saturation remains covered by deterministic rejection tests.
-      ARM macOS then exposed and fixed an immediate-completion race: a parallel batch is not
-      publishable until every child in that batch has been registered, preventing early parent
-      cleanup from abandoning later children. Soak failures retain their first structured error.
-      A complete hosted PR matrix is now clean across ASan/UBSan, TSAN, fuzz smoke and concurrency
-      soak. Completion still requires accumulated clean scheduled-run evidence. Lease expiry
-      conformance waits on observable reclaimed state with a bounded deadline instead of assuming
-      a scheduler-sensitive millisecond sleep.
-- [-] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and
+      by design. Blocked on provisioning and identifying a dedicated performance runner plus human
+      review of its first calibration; a developer workstation/shared runner is explicitly invalid.
+- [!] Tier-1 x64/arm64 release matrix and install/package/export validation. Relocatable CMake and
       pkg-config packages now install shared/static Core, optional extension targets, headers, and
       CLI; clean external consumers execute a real Workflow. CI covers shared Linux and macOS
       x64/arm64 plus MinGW/MSVC x64, a separate static consumer gate, and architecture-labelled
       unsigned CPack archives. Local strict MinGW shared/static installs and the shared archive
       pass. The first complete hosted x64/arm64 matrix and installed consumer suite are clean.
       Completion still requires an exercised signed-release procedure; unsigned CI archives are
-      explicitly not production artifacts.
-- [-] Threat model, security review, operational guide, LTS policy, and release process. Trust
+      explicitly not production artifacts. Blocked on the same controlled signed-release exercise
+      and externally retained artifacts required below.
+- [!] Threat model, security review, operational guide, LTS policy, and release process. Trust
       boundaries, principal threats, residual host/SPI risks, production readiness and failure
       response, upgrade/rollback, capacity signals, proposed 1.x support windows, emergency
       response, and a two-party signed-release checklist are documented. Packages now install the
@@ -74,8 +69,10 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       feature branches run the PR matrix once instead of duplicating push and PR executions.
       Completion requires an
       independent review with findings disposition, freezing the proposed support window at the
-      first 1.0 RC, and a controlled offline/HSM-key clean-environment release exercise.
-- [-] Freeze 1.0 C ABI and publish compatibility matrix. Old-header/new-library and
+      first 1.0 RC, and a controlled offline/HSM-key clean-environment release exercise. These
+      require an independent reviewer, two maintainers and access to the real offline/HSM signing
+      environment; a self-review or test key is not acceptable evidence.
+- [!] Freeze 1.0 C ABI and publish compatibility matrix. Old-header/new-library and
       old-binary/new-library behavioral fixtures are now complemented by a source-controlled
       manifest that dynamically verifies all 52 current C ABI exports on every shared-library
       platform. A C99 layout gate checks the exact 64-bit little-endian public struct sizes/member
@@ -93,9 +90,30 @@ No active P2 supply-chain or language-ecosystem items. New P2 findings must be a
       Its async smoke test uses the stable `Wake` API rather than the later `Waker::noop` API.
       Windows Rust conformance uses the GNU target and discovered GCC linker matching the MinGW
       runtime under test, rather than accidentally mixing MSVC Rust with a GNU import library.
-      Completion requires the 1.0 RC freeze review and signed historical binaries in CI.
+      Completion requires the 1.0 RC freeze review and signed historical binaries in CI. Blocked
+      until maintainers declare the first 1.0 RC and publish its signed Tier-1 binaries; no such
+      historical release can be manufactured from the current 0.2.0 development checkout.
 
 ## Completed
+
+- [x] Fuzzing and concurrency gates combine independent-model property tests, ASan/UBSan
+      libFuzzer, TSAN, deterministic saturation/race regressions and PR/nightly concurrent Run
+      soaks. Hosted failures found and permanently fixed JsonCpp type termination, completion-state
+      lifetime, scheduler-cycle, ARM immediate-completion and timing-sensitive lease issues. Ten
+      consecutive successful scheduled fuzz-plus-80,000-Run executions are retained in
+      `docs/evidence/stress-history-2026-08-13.md`; future findings still require minimized corpus
+      or regression-test promotion.
+- [x] Python now exposes production-host Engine/Run limits, capability discovery, Workflow
+      Patch/diff, snapshot/restore/selective rerun, Scheduler, structured TraceSink, full StateStore
+      CAS/claim/list and ResourceLeaseProvider adapters. Native callback exceptions remain contained
+      and observable, scheduler and lease handles are one-shot, parent lifetimes are fenced, runtime
+      compatibility fails closed, and blocking Run operations have cancellation-aware asyncio forms.
+      Binding conformance executes every adapter and covers callback diagnostics and ownership.
+- [x] An executable Python asyncio service-host example runs a versioned AI Workflow with host-owned
+      async LLM/tool adapters, SQLite durable CAS and restore, cross-process ownership rejection,
+      idempotent external-effect commit, correlated traces, resource leases, deadlines and
+      bidirectional cancellation. Catalog, authorization, model routing and database choices remain
+      explicitly outside Core; CI runs the example beside language-binding conformance.
 
 - [x] Warning-clean supported toolchains. DAGE-owned Core, tools, examples, benchmarks, C/C++ ABI
       fixtures, tests and binding adapters pass the first complete hosted GCC, Clang, AppleClang,

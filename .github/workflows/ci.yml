@@ -266,9 +266,11 @@ jobs:
         env:
           DAGE_LIBRARY: ${{ github.workspace }}/build-bindings/libdage.dll
           DAGE_CONFORMANCE_DIR: ${{ github.workspace }}/tests/conformance/bindings
+          PYTHONPATH: ${{ github.workspace }}/bindings/python/src
         run: |
           $env:PATH = "${{ github.workspace }}/build-bindings;$env:PATH"
           python bindings/python/conformance.py
+          python examples/python/service_host.py
       - name: Run Java conformance
         run: |
           javac --release 21 -Xlint:all -Werror -d bindings/java/out bindings/java/io/dage/DageException.java bindings/java/io/dage/AsyncExecutor.java bindings/java/io/dage/AsyncExecutionContext.java bindings/java/io/dage/AsyncExecutorBridge.java bindings/java/io/dage/Engine.java bindings/java/io/dage/Workflow.java bindings/java/io/dage/Run.java bindings/java/io/dage/Smoke.java

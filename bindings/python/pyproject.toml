@@ -1,13 +1,32 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77", "wheel>=0.45"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dage-runtime"
 version = "0.2.0"
 description = "Python binding for the embeddable DAGE DAG runtime"
+readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "DAGE maintainers" }]
+keywords = ["dag", "workflow", "runtime", "ai"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
 
-[tool.setuptools]
-py-modules = ["dage"]
+[project.urls]
+Documentation = "https://github.com/sxf51/DAGE/tree/main/docs"
+Issues = "https://github.com/sxf51/DAGE/issues"
+Repository = "https://github.com/sxf51/DAGE"
+
+[tool.setuptools.packages.find]
+where = ["src"]
