@@ -40,6 +40,9 @@ jobs:
       - name: Build macOS native runtime
         if: runner.os == 'macOS'
         run: |
+          deployment_target="$(sw_vers -productVersion | awk -F. '{print $1 ".0"}')"
+          export MACOSX_DEPLOYMENT_TARGET="$deployment_target"
+          echo "MACOSX_DEPLOYMENT_TARGET=$deployment_target" >> "$GITHUB_ENV"
           cmake -S . -B build-python-wheel -G Ninja \
             -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" \
             -DDAGE_BUILD_SHARED=ON -DDAGE_BUILD_TESTS=OFF -DDAGE_BUILD_TOOLS=OFF \
