@@ -46,17 +46,11 @@ jobs:
             -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_BUNDLE_TOOLS=OFF \
             -DDAGE_BUILD_OPENTELEMETRY_BRIDGE=OFF
           cmake --build build-python-wheel --target dage
-          mapfile -t runtime_dependencies < <(ldd build-python-wheel/libdage.dll | awk '$2 == "=>" && $3 ~ /\/ucrt64\/bin\// { print $3 }' | sort -u)
-          test "${#runtime_dependencies[@]}" -gt 0
-          wheel_libraries=("$(cygpath -w "$PWD/build-python-wheel/libdage.dll")")
-          for dependency in "${runtime_dependencies[@]}"; do
-            wheel_libraries+=("$(cygpath -w "$dependency")")
-          done
-          (IFS=';'; echo "DAGE_WHEEL_LIBRARIES=${wheel_libraries[*]}") >> "$GITHUB_ENV"
           echo "DAGE_WHEEL_LIBRARIES=$PWD/build-python-wheel/libdage.dylib" >> "$GITHUB_ENV"
       - name: Build repaired CPython 3.11-3.13 wheels
         env:
           CIBW_BUILD: "cp311-* cp312-* cp313-*"
+          CIBW_SKIP: "*-musllinux_*"
           CIBW_ARCHS: native
           CIBW_BUILD_VERBOSITY: "1"
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
@@ -108,6 +102,13 @@ jobs:
             -DDAGE_BUILD_EXAMPLES=OFF -DDAGE_BUILD_BUNDLE_TOOLS=OFF \
             -DDAGE_BUILD_OPENTELEMETRY_BRIDGE=OFF
           cmake --build build-python-wheel --target dage
+          mapfile -t runtime_dependencies < <(ldd build-python-wheel/libdage.dll | awk '$2 == "=>" && $3 ~ /\/ucrt64\/bin\// { print $3 }' | sort -u)
+          test "${#runtime_dependencies[@]}" -gt 0
+          wheel_libraries=("$(cygpath -w "$PWD/build-python-wheel/libdage.dll")")
+          for dependency in "${runtime_dependencies[@]}"; do
+            wheel_libraries+=("$(cygpath -w "$dependency")")
+          done
+          (IFS=';'; echo "DAGE_WHEEL_LIBRARIES=${wheel_libraries[*]}") >> "$GITHUB_ENV"
       - name: Build repaired CPython 3.11-3.13 wheels
         shell: pwsh
         env:

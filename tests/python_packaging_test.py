@@ -2,15 +2,17 @@
 
 import re
 import sys
-import tomllib
 from pathlib import Path
 
 
 def main(root):
     root = Path(root)
     python_root = root / "bindings" / "python"
-    project = tomllib.loads((python_root / "pyproject.toml").read_text(encoding="utf-8"))
-    version = project["project"]["version"]
+    pyproject = (python_root / "pyproject.toml").read_text(encoding="utf-8")
+    version_match = re.search(r'^version\s*=\s*"([^"]+)"\s*$', pyproject, re.MULTILINE)
+    if version_match is None:
+        raise RuntimeError("Python package version is missing or not a string literal")
+    version = version_match.group(1)
     if (python_root / "LICENSE").read_bytes() != (root / "LICENSE").read_bytes():
         raise RuntimeError("Python wheel license drifted from the repository license")
     module = (python_root / "src" / "dage" / "__init__.py").read_text(encoding="utf-8")
