@@ -24,7 +24,7 @@ no-thread environments have no 1.0 support commitment.
 
 | Binding | Current CI toolchain | Boundary |
 | --- | --- | --- |
-| Python | CPython 3.12+ | stable C ABI through `ctypes`; enforced by package metadata |
+| Python | CPython 3.11+ | stable C ABI through `ctypes`; enforced by package metadata |
 | Java | Java 21+ | JNI adapter compiled with `javac --release 21` |
 | C# | .NET 10+ | `net10.0` P/Invoke assembly over stable C ABI |
 | Rust | Rust 1.75+ | Cargo `rust-version` and edition 2021 FFI crate |

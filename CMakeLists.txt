@@ -289,6 +289,15 @@ if(DAGE_BUILD_TESTS)
   find_package(Python3 COMPONENTS Interpreter QUIET)
   find_program(DAGE_OPENSSL_CLI NAMES openssl
     HINTS "${OPENSSL_ROOT_DIR}/bin")
+  if(Python3_Interpreter_FOUND)
+    add_test(NAME dage_python_packaging_test
+      COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/python_packaging_test.py
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(dage_python_packaging_test PROPERTIES
+      LABELS "packaging"
+      TIMEOUT 30)
+  endif()
   if(Python3_Interpreter_FOUND AND DAGE_OPENSSL_CLI)
     add_test(NAME dage_release_manifest_test
       COMMAND ${Python3_EXECUTABLE}

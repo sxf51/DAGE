@@ -89,3 +89,20 @@ The configured Tier-1 source/package matrix is:
 Configuration is not release evidence by itself. The TODO remains in progress until the matrix has
 completed cleanly on hosted runners and the signed release procedure has been exercised. Windows
 arm64 is not a Tier-1 binary target for 1.0.
+
+## Python wheels
+
+Official `dage-runtime` wheels contain the matching DAGE shared library and its private dynamic
+runtime dependencies under `dage/_native`. They are platform wheels, not `py3-none-any` artifacts.
+The build requires `DAGE_WHEEL_LIBRARIES`, an explicit platform path-separated file list for the
+audited runtime closure; an empty native payload or missing file fails the build. Directory globs
+are deliberately unsupported because they can silently add unrelated build-host libraries. Release
+CI must repair and audit Linux/macOS wheels, inspect Windows DLL
+dependencies, install each wheel into a clean environment, clear `DAGE_LIBRARY`, and run binding
+conformance before publication.
+
+Production hosts may instead set `DAGE_LIBRARY` to an externally managed runtime. That escape hatch
+is intended for organizations that verify the separately signed DAGE release manifest and pin the
+runtime digest. The external runtime must advertise `c.runtime_spi.v1`, use C ABI version 1, and
+match the Python package's `0.2` runtime line; silently searching a system library path is not a
+supported replacement for either the bundled runtime or an explicit `DAGE_LIBRARY` value.
