@@ -1,0 +1,80 @@
+{
+  "aggregation": "median_of_independent_processes",
+  "environment": {
+    "architecture": "x86_64",
+    "build_type": "Release",
+    "clock": "steady_clock",
+    "compiler": "GNU 13.2.0",
+    "linkage": "static",
+    "platform": "windows"
+  },
+  "latency": {
+    "load_workflow_64": {
+      "p50_baseline_ns": 3310650.0,
+      "p50_limit_ns": 3641715.0000000005,
+      "p95_baseline_ns": 4408565.0,
+      "p95_limit_ns": 5069849.75,
+      "p99_baseline_ns": 5700306.0,
+      "p99_limit_ns": 6840367.2
+    },
+    "parse_workflow_64": {
+      "p50_baseline_ns": 278450.0,
+      "p50_limit_ns": 306295.0,
+      "p95_baseline_ns": 392350.0,
+      "p95_limit_ns": 451202.49999999994,
+      "p99_baseline_ns": 657955.0,
+      "p99_limit_ns": 789546.0
+    },
+    "recover_human_checkpoint": {
+      "p50_baseline_ns": 289650.0,
+      "p50_limit_ns": 318615.0,
+      "p95_baseline_ns": 404730.0,
+      "p95_limit_ns": 465439.49999999994,
+      "p99_baseline_ns": 548118.0,
+      "p99_limit_ns": 657741.6
+    },
+    "run_ai_fanout": {
+      "p50_baseline_ns": 1708150.0,
+      "p50_limit_ns": 1878965.0000000002,
+      "p95_baseline_ns": 1885030.0,
+      "p95_limit_ns": 2167784.5,
+      "p99_baseline_ns": 2145877.0,
+      "p99_limit_ns": 2575052.4
+    },
+    "run_linear_16": {
+      "p50_baseline_ns": 2846250.0,
+      "p50_limit_ns": 3130875.0000000005,
+      "p95_baseline_ns": 4668420.0,
+      "p95_limit_ns": 5368683.0,
+      "p99_baseline_ns": 5637803.0,
+      "p99_limit_ns": 6765363.6
+    },
+    "validate_workflow_64": {
+      "p50_baseline_ns": 379550.0,
+      "p50_limit_ns": 417505.00000000006,
+      "p95_baseline_ns": 529140.0,
+      "p95_limit_ns": 608511.0,
+      "p99_baseline_ns": 832379.0,
+      "p99_limit_ns": 998854.7999999999
+    }
+  },
+  "machine_id": "dage-windows-x64-perf-01",
+  "policy": {
+    "checkpoint_max_relative": 0.05,
+    "latency_p50_relative": 0.1,
+    "latency_p95_relative": 0.15,
+    "latency_p99_relative": 0.2,
+    "peak_rss_relative": 0.1,
+    "write_amplification_relative": 0.05
+  },
+  "resources": {
+    "checkpoint_max_baseline_bytes": 1568.0,
+    "checkpoint_max_limit_bytes": 1646.4,
+    "peak_rss_baseline_bytes": 14340096.0,
+    "peak_rss_limit_bytes": 15774105.600000001,
+    "write_amplification_baseline": 11.634,
+    "write_amplification_limit": 12.2157
+  },
+  "sample_count": 7,
+  "schema_version": 2
+}

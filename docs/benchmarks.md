@@ -111,3 +111,30 @@ policy. A threshold violation exits with status 1; invalid evidence exits with s
 Baseline creation is a reviewed release-engineering action. A baseline records observed behavior,
 not permission to regress toward its limit. Intentional protocol or topology changes that increase
 Checkpoint size or write amplification require an explained baseline update.
+
+## One-command fixed-hardware runner
+
+`tools/hardware_performance_budget.py` configures a static Release build, launches seven independent
+benchmark processes, retains every raw JSON measurement, and delegates calibration/comparison to
+the fail-closed budget tool above. Create a reviewed baseline on the dedicated machine with:
+
+```powershell
+python tools/hardware_performance_budget.py calibrate `
+  --machine-id dage-windows-x64-perf-01 `
+  --baseline benchmarks/baselines/dage-windows-x64-perf-01.json `
+  --generator Ninja
+```
+
+Check a release candidate on the same machine and environment with:
+
+```powershell
+python tools/hardware_performance_budget.py check `
+  --machine-id dage-windows-x64-perf-01 `
+  --baseline benchmarks/baselines/dage-windows-x64-perf-01.json `
+  --generator Ninja
+```
+
+Raw runs are written to a new UTC-stamped directory under `benchmark-runs/`. The script refuses to
+reuse that directory, accepts no smoke measurements, requires at least five independent processes,
+and returns `1` for a measured regression or `2` for invalid evidence/build failures. Pass
+`--skip-build --build-dir <path>` only when the exact Release build has already been produced.
