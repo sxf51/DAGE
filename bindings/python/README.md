@@ -19,6 +19,8 @@ for asyncio Executors, durability adapters, cancellation, runtime limits and rel
 - `examples/python/run.py`: minimal synchronous Workflow and pure host Executor.
 - `examples/python/langchain_host.py`: a LangChain `Runnable` hosted as an async DAGE Executor;
   deterministic and API-key-free, with the real-model replacement boundary called out in source.
+- `examples/python/langchain_complete_demo/`: documented Chinese end-to-end demo with an OpenAI-
+  compatible model, LangChain tools, parallel branches, traces, and versioned/CAS JSON patches.
 - `examples/python/service_host.py`: full asyncio service-host contract with durable SQLite CAS,
   restore ownership, idempotent effects, traces, leases, deadlines and cancellation.
 

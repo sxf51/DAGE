@@ -1,0 +1,52 @@
+{
+  "format": "dage-workflow",
+  "format_version": "0.2.0",
+  "x_revision": 0,
+  "id": "langchain-complete-demo",
+  "name": "LangChain 完整宿主演示模板",
+  "entry": "fan_out",
+  "limits": {
+    "max_steps": 12,
+    "max_parallel": 2
+  },
+  "nodes": {
+    "fan_out": {
+      "type": "parallel",
+      "branches": ["agent", "inspect"],
+      "join": "merge",
+      "policy": {"mode": "all", "fail": "fast"}
+    },
+    "agent": {
+      "type": "llm",
+      "executor": "langchain_agent",
+      "effects": {
+        "kind": "external_write",
+        "replay": "idempotent",
+        "idempotency_key": "${run.id}:${node.id}"
+      },
+      "input": {
+        "question": "${workflow.input.question}",
+        "change_request": "${workflow.input.change_request}",
+        "expected_version": "${workflow.input.expected_version}"
+      },
+      "next": "merge"
+    },
+    "inspect": {
+      "type": "tool",
+      "executor": "inspect_workflow",
+      "effects": {"kind": "pure", "replay": "safe"},
+      "input": {"requested_at": "${workflow.input.requested_at}"},
+      "next": "merge"
+    },
+    "merge": {
+      "type": "join",
+      "executor": "merge_results",
+      "input": {
+        "agent": "${nodes.agent.output}",
+        "inspection": "${nodes.inspect.output}"
+      },
+      "next": "done"
+    },
+    "done": {"type": "end", "input": "${nodes.merge.output}"}
+  }
+}
